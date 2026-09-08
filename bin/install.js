@@ -7,7 +7,7 @@ const os = require("os");
 
 const HOME = os.homedir();
 const REPO_ROOT = path.join(__dirname, "..");
-const PLUGINS = ["signal-scout", "podcast"];
+const PLUGINS = ["signal-scout", "podcast", "review-scout", "ideation", "research-suite", "signal-outreach"];
 
 // Both tools read the identical SKILL.md-plus-scripts folder shape, just from
 // different homes: Claude Code from ~/.claude/skills, Codex CLI (global) from

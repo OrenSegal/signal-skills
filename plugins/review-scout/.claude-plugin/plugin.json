@@ -1,0 +1,10 @@
+{
+  "name": "review-scout",
+  "version": "1.0.0",
+  "description": "Mine user reviews (mobile app store, browser extension, web/SaaS) into ranked findings: reproducible bugs, feature-request clusters, cross-version regressions, praise worth keeping. Uses only compliant, ToS-safe sources (Apple's public RSS feed, Google's official Play Developer API) and says so explicitly where no compliant path exists.",
+  "author": { "name": "Oren Segal" },
+  "homepage": "https://github.com/OrenSegal/signal-skills",
+  "repository": "https://github.com/OrenSegal/signal-skills",
+  "license": "MIT",
+  "keywords": ["claude", "claude-code", "claude-code-skill", "reviews", "app-store"]
+}

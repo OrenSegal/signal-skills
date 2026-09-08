@@ -1,9 +1,10 @@
 {
   "name": "signal-scout",
-  "version": "1.0.0",
-  "description": "Turn a pile of ranked research findings into one prioritized, shareable Artifact report. The reporting stage other skills call once extraction is done.",
+  "version": "1.1.0",
+  "description": "Turn a pile of ranked research findings into one prioritized, shareable Artifact report via render_report.py: mechanically enforces no-em-dash copy, required confidence tags, and theme-safe HTML. The canonical copy of this rendering pair; podcast/review-scout/ideation each ship their own standalone copy in sync with it.",
   "author": { "name": "Oren Segal" },
-  "homepage": "https://github.com/OrenSegal/podcast-skill",
-  "repository": "https://github.com/OrenSegal/podcast-skill",
-  "license": "MIT"
+  "homepage": "https://github.com/OrenSegal/signal-skills",
+  "repository": "https://github.com/OrenSegal/signal-skills",
+  "license": "MIT",
+  "keywords": ["claude", "claude-code", "claude-code-skill", "report", "plugin"]
 }

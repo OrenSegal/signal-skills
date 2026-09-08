@@ -1,0 +1,10 @@
+{
+  "name": "research-suite",
+  "version": "1.0.0",
+  "description": "Router and map for the podcast/review-scout/ideation/signal-scout skill family: which skill for which ask, how the shared render_report.py/analytics-check.md infra fits together. User-invoked only, never fires automatically.",
+  "author": { "name": "Oren Segal" },
+  "homepage": "https://github.com/OrenSegal/signal-skills",
+  "repository": "https://github.com/OrenSegal/signal-skills",
+  "license": "MIT",
+  "keywords": ["claude", "claude-code", "claude-code-skill", "router"]
+}

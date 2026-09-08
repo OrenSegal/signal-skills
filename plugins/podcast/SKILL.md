@@ -40,6 +40,19 @@ Whichever lens applies, it changes what counts as fluff vs. payload in
 Step 3 and how Step 4 frames relevance — decide it before fanning out
 extractors, not after.
 
+## Recommended sources (mobile app growth / ASO / monetization lens)
+
+`sources.md` (next to this file) is a curated, hand-maintained list of shows
+worth mining for a mobile/consumer-app builder — not an exhaustive directory,
+just ones that either scored well on a past mining run or fill a specific
+gap (a different angle on a claim already in the ledger, so cross-show dedup
+has something to check against). When the user asks "what else should I
+mine" or "find me more sources like X," read `sources.md` first instead of
+guessing from scratch — it already has each show's angle and why it's there.
+Update it (don't just answer in chat) whenever a mining run or a
+conversation surfaces a new worthwhile show, so the list compounds instead
+of resetting every session.
+
 ## Step 0 — Check the ledger before doing anything
 
 `ledger.py` (next to this file) tracks state across runs so re-mining a show
@@ -54,6 +67,42 @@ Cross-reference this against the episode list `resolve.py` returns (Step 1)
 and only fan out extractors (Step 3) on episodes NOT already in this list.
 If every candidate episode is already mined, say so and skip straight to
 Step 3.5 (prediction check) and Step 5 (report) — don't re-extract.
+
+### Corpus questions skip extraction entirely
+
+If the user is asking what the corpus already knows ("what have my mined
+shows said about pricing", "who's actually been right about agent tooling")
+rather than asking you to mine a URL, answer straight from the ledger and
+stop — no `resolve.py`, no transcripts, no extractor fan-out:
+
+```bash
+python3 ~/.claude/skills/podcast/ledger.py query --topic "<topic>" [--show "<show>"] [--since 2026-01-01] [--tag measured]
+python3 ~/.claude/skills/podcast/ledger.py scoreboard [--by-guest]
+```
+
+`query` searches every finding ever recorded (Step 3 stores them, not just
+predictions). `scoreboard` gives confirmed/(confirmed+failed) hit rate per
+show, or per speaker with `--by-guest` once findings carry a `speaker` field.
+This path costs a few hundred tokens instead of the full mining pipeline —
+always check whether the question is answerable this way before doing
+anything else.
+
+### Watched shows ("check subscriptions")
+
+```bash
+python3 ~/.claude/skills/podcast/ledger.py subscribe --show "<url-or-show-name>"
+python3 ~/.claude/skills/podcast/ledger.py subscriptions
+python3 ~/.claude/skills/podcast/ledger.py unsubscribe --show "<url-or-show-name>"
+```
+
+When the user says "watch this show" or "check my subscriptions": for each
+subscribed source, run `resolve.py` (Step 1), diff against `mined` (this
+step) to find only-new episodes, mine those (Steps 2-4), and end with one
+combined report (Step 5) across all subscriptions plus a prediction-check
+pass (Step 3.5) against every show's open predictions, not just the newly
+mined one — a new episode on show A can resolve a prediction made on show
+B. This is also what a scheduled run should invoke (see Hygiene) so digests
+show up on a cadence instead of only on request.
 
 ## Step 1 — Resolve source → feed → transcripts
 
@@ -122,9 +171,24 @@ python3 ~/.claude/skills/podcast/ledger.py config-get transcription_method
 
 ## Step 3 — Fan out extractors
 
-One subagent per 1-2 episodes (the ones Step 0 didn't already rule out), run
-in parallel. Each reads its transcript IN FULL and returns structured
-findings only. Never read the transcript yourself.
+Batch by word count, not by a fixed episode count: read `words` per episode
+from Step 1's `manifest.json` and group episodes into subagents so each
+agent's combined transcript stays around ~25k words. A handful of short
+episodes can share one agent; a 3-hour outlier gets its own. This is cheaper
+and more even than a flat "1-2 episodes per agent" rule when show lengths
+vary widely.
+
+Extraction is mechanical (reading a transcript and shaping findings, no
+judgment calls that need the main session's model) — run extractor
+subagents on a cheaper/faster model (e.g. Haiku) at low reasoning effort.
+Reserve the session's actual model for Step 4 synthesis, Step 3.5's
+contradiction-spotting, and any web cross-check verdicts (Step 3.7), where
+judgment actually matters. This is the single biggest cost lever in the
+whole pipeline — don't skip it because "it's just Python subagents," it's
+model selection on the `agent()`/Task call itself.
+
+Each extractor reads its transcript IN FULL and returns structured findings
+only. Never read the transcript yourself.
 
 The extraction prompt must demand SHAPES, not a summary:
 
@@ -159,9 +223,12 @@ ledger). Ask each extractor to close its response with a fenced JSON block:
   "show": "<show name>",
   "date": "<published date>",
   "findings": [
-    {"claim": "...", "tag": "measured|anecdotal|speculative", "topic": "..."}
+    {"claim": "...", "tag": "measured|anecdotal|speculative", "topic": "...", "speaker": "<optional>"}
   ],
-  "predictions": ["<falsifiable prediction text>", "..."]
+  "predictions": [
+    {"text": "<falsifiable prediction text>", "speaker": "<optional>"},
+    "<or a plain string when unattributed>"
+  ]
 }
 ```
 
@@ -169,12 +236,17 @@ ledger). Ask each extractor to close its response with a fenced JSON block:
 loops") — it's what makes cross-show topic overlap in Step 3.5 findable
 instead of requiring manual eyeballing.
 
-After each extractor returns, record it:
+After each extractor returns, record it — pass the findings themselves
+(`--findings-json`), not just the file path, so `query`/`scoreboard` (Step 0)
+can search the corpus without re-reading anything off disk. When a finding
+or prediction can be attributed to a specific guest/host, pass `speaker` on
+the prediction object (plain strings still work when it can't be):
 
 ```bash
 python3 ~/.claude/skills/podcast/ledger.py record --show "<show name>" \
   --episode "<title>" --date "<date>" --findings-path "<path to saved findings>" \
-  --predictions-json '["<prediction 1>", "<prediction 2>"]'
+  --findings-json '[{"claim": "...", "tag": "measured", "topic": "..."}]' \
+  --predictions-json '[{"text": "<prediction 1>", "speaker": "<guest name>"}, "<prediction 2, unattributed>"]'
 ```
 
 ## Step 3.5 — Check old predictions, surface cross-show overlap
@@ -191,7 +263,10 @@ python3 ~/.claude/skills/podcast/ledger.py dedup --threshold 0.5
   freshly-mined episodes confirms, refutes, or is now stale (a
   tool/model/pricing prediction older than ~8 weeks is presumptively stale —
   say so rather than silently carrying it forward). Resolve it:
-  `ledger.py check-prediction --show "<show>" --episode "<title>" --text "<substring>" --status confirmed|failed|stale`
+  `ledger.py check-prediction --show "<show>" --episode "<title>" --text "<substring>" --status confirmed|failed|stale`.
+  Before doing this by hand across every show, run
+  `ledger.py stale-sweep --weeks 8` to batch-flag the obvious rot in one
+  pass (`--dry-run` first to see the candidate list; without it, it writes).
 - **Dedup**: `ledger.py dedup` does token-overlap matching across every
   show's recorded predictions/claims — it's a candidate list to check by
   hand, not a verdict (no embeddings, deliberately dependency-free). High
@@ -222,6 +297,42 @@ impressive-looking dashboard predated the system being credited for it.
 Ask explicitly: *does the evidence shown actually postdate the thing it's
 offered as proof of?*
 
+## Step 3.7 — Cross-check the load-bearing claims against the open web
+
+Optional, and deliberately narrow so it can't balloon cost. Claude Code has
+`WebSearch` natively; harnesses without an equivalent skip this step (say so
+rather than failing — see `AGENTS.md`).
+
+Eligible claims, ranked, top ~5 only:
+1. Open predictions old enough to plausibly have resolved —
+   `ledger.py grade-candidates --min-weeks 2 --limit 10` returns exactly
+   this worklist (oldest first, already excluding anything too fresh to
+   check), so don't hand-scan every open prediction; work off this list.
+2. `[measured]`-tagged findings that are actually load-bearing to the
+   user's lens (Step 4 filters against the same lens — decide this here,
+   not after).
+
+Never spend a web check on `[anecdotal]`/`[speculative]` findings or fluff.
+Skip anything that already has a `source_url` recorded from a prior check.
+
+For each eligible claim, one subagent, one WebSearch pass: "find independent
+evidence confirming or refuting: `<claim, dated, source show/episode>`."
+Subagent returns a verdict (confirmed / refuted / no independent evidence
+found) plus the URL it used. Feed that straight back into the ledger so the
+scoreboard carries real evidence, not vibes:
+
+```bash
+python3 ~/.claude/skills/podcast/ledger.py check-prediction --show "<show>" \
+  --episode "<title>" --text "<substring>" --status confirmed|failed \
+  --source-url "<url the web check used>"
+```
+
+Findings (not predictions) that get web-corroborated or web-contradicted
+don't have a ledger slot for the verdict yet — carry the tag inline into
+Step 5's confidence tags as `web-corroborated` / `web-contradicted` instead.
+A `web-contradicted` finding is the single highest-value thing this skill
+can surface — it belongs at the top of Step 4's contradictions, not buried.
+
 ## Step 4 — Synthesize across episodes
 
 One episode is one opinion. The trend only exists across episodes.
@@ -240,25 +351,164 @@ One episode is one opinion. The trend only exists across episodes.
   thing is this run — it isn't always Shelfie, and it isn't always
   customer/monetization relevance.
 
-## Step 5 — Report via the `signal-scout` skill
+## Step 4.5 — Cross-check against your own analytics (optional)
+
+If any synthesized finding is the kind of claim your own product data
+could confirm or refute (a funnel rate, an event frequency, a retention
+number), see `analytics-check.md` (next to this file) before writing the
+report. It's backend-agnostic by design (PostHog, Amplitude, Mixpanel,
+GA4, detected at runtime, gated on credentials actually being present) and
+upgrades a claim from anecdotal to verified/contradicted-against-your-data
+— the single highest-value thing this skill can do that a generic
+research summary can't: tell you a guest's advice is wrong for *your*
+users specifically, not just unmeasured in general. Skip it entirely if
+no backend is configured; don't fabricate a comparison.
+
+## Step 5 — Report (in-house, no external skill dependency)
 
 Chat text or a raw markdown dump doesn't hold up as something to reopen or
-share later. The report step is delegated to the `signal-scout` skill —
-invoke it rather than re-deriving report structure/tokens here. Hand it:
+share later. This skill owns its report rendering: `template.html` and
+`render_report.py` (both next to this file, symlinked from the
+`signal-scout` skill so the two never drift, but invoked directly here —
+no skill-to-skill call at runtime).
 
-- every finding in scope for the user's query (not a curated top-N — rank
-  by priority, don't cut),
-- each finding's confidence tag (confirmed-twice / measured / anecdotal /
-  unresolved / single-sourced),
-- the ledger's open predictions (Step 3.5) and dedup output, so
-  contradictions/overlaps land in the ranking instead of a separate
-  ignored section,
-- episode + date per finding, always — a dated citation beats an unsourced
-  claim, the one habit worth keeping from every consumer podcast-summarizer
-  that does source-attribution well.
+**Don't hand-write the report HTML.** Build a JSON payload (see
+`render_report.py`'s docstring for the exact schema: title, eyebrow,
+headline, query, tiers[].items[]) and run:
 
-`signal-scout` owns the Artifact mechanics (theming, tier layout, the
-no-em-dash copy rule) — don't hand-roll a new report shell per mining run.
+```bash
+python3 ~/.claude/skills/podcast/render_report.py payload.json out.html
+```
+
+then publish `out.html` with the `Artifact` tool on Claude Code. On any
+other harness (no `Artifact` tool available), run the same script with
+`--open` instead to preview it in the local default browser, or just
+report the output path — see `AGENTS.md` next to this file for the full
+non-Claude fallback path.
+
+If the user wants something they can paste into a prompt, ticket, or chat
+message instead of (or alongside) the Artifact, add a `.md` output target
+in the same invocation — same payload, same validation, picked by file
+extension:
+
+```bash
+python3 ~/.claude/skills/podcast/render_report.py payload.json out.html out.md
+```
+
+The script owns all the
+boilerplate and the hard style rules mechanically, so you only decide
+content:
+
+- every finding in scope for the user's query goes in the payload (not a
+  curated top-N — rank by priority, don't cut). A genuine volume problem
+  (50+ findings) gets called out explicitly with a link to the full data,
+  never a silent truncation.
+- findings grouped into priority tiers, each with a short label explaining
+  what the tier means (e.g. "Ship before the deadline", "Already
+  validated", "Open decision", "Worth a test", "Skip this source"). Every
+  tier with at least one item belongs in the payload; the script refuses
+  to render a tier with zero items rather than silently rendering it
+  empty, so don't include one you're not populating.
+- within a tier: order items by confidence (confirmed-twice above measured
+  above anecdotal above unresolved), not by source or chronology.
+  `web-corroborated`/`web-contradicted` (Step 3.7, if it ran) rank above
+  plain `measured` — independent external confirmation beats a single
+  transcript's say-so.
+- reasoning inline with each finding via the `reasoning` field, never a
+  separate section: what it claims, why it matters here, and the evidence
+  (source, episode/date, confidence tag) together.
+- fold in the ledger's open predictions (Step 3.5) and dedup output as
+  their own items/tier, so contradictions/overlaps land in the ranking
+  instead of a separate ignored section.
+- episode + date per finding, always, in each item's `source` field.
+
+What the script enforces for you (previously manual, now mechanical):
+- **No em dashes anywhere in the copy** — `render_report.py` scans every
+  text field and refuses to render (with the exact field named) if it
+  finds one. You'll get a hard error, not a missed review pass.
+- **Confidence is visible, not just implied** — `tag`/`tag_class` are
+  required per item, so there's no path to omitting the tag.
+- **Theme tokens can't be corrupted** — the script only ever substitutes
+  the title into the CSS head; it never touches the `:root` /
+  `:root[data-theme]` / media-query blocks. The dark/light-inversion bug
+  from a prior version of this template is now structurally impossible
+  through this path.
+
+What still needs a real decision (the script can't do this for you):
+- **Palette grounding.** `template.html`'s default (dark panel, sans
+  display, monospace data, signal-strength bars) is one worked example,
+  not a mandatory look. If the show/episode's subject calls for something
+  else, edit the CSS variables directly before running the script for that
+  mining run, rather than defaulting to warm-cream+serif+terracotta (the
+  AI-cliché the prior version shipped once).
+- Load `artifact-design` before publishing — still required by the
+  `Artifact` tool itself.
+
+## Step 6 — Publish the scoreboard (optional, zero extra tokens)
+
+The per-episode report above is the private, working-session output. The
+scoreboard is a different, public-facing report: every show (or guest, with
+`--by-guest`) ranked by confirmed prediction hit rate, built entirely from
+data Step 3/3.5/3.7 already recorded — no new mining, no new LLM calls, just
+reformatting the ledger:
+
+```bash
+python3 ~/.claude/skills/podcast/scoreboard_report.py out.html out.md
+python3 ~/.claude/skills/podcast/scoreboard_report.py --by-guest --min-tested 2 out.html
+```
+
+Reuses `render_report.py`/`template.html` (hit-rate bands as tiers instead
+of topic tiers), so it inherits the same filter toolbar, theme rules, and
+em-dash guard for free. It errors out plainly if nothing has been graded
+yet (`ledger.py check-prediction` never ran) rather than publishing an
+empty "too early to grade" wall — run Step 3.7 against
+`grade-candidates` first if that happens.
+
+This is the one report in this skill worth publishing even when no one
+asked for it: "who's actually been right" is inherently shareable in a way
+a private findings digest isn't, and it costs nothing incremental to
+produce since the grading work already happened as a side effect of normal
+mining. Treat it as a standing, low-effort distribution loop — refresh and
+republish it after every `check-prediction`/`grade-candidates` pass, not
+as a one-off.
+
+## What runs on-device vs. what needs Claude
+
+Don't spend tokens on anything a script can already do deterministically.
+The dividing line, mapped onto the steps above:
+
+**On-device, zero tokens (scripts, CLI tools, local compute):**
+- Step 0 — ledger lookups (`ledger.py mined/predictions/dedup`), all local
+  JSON reads/token-overlap matching, no LLM involved.
+- Step 1 — `resolve.py` (feed resolution, RSS parsing, `yt-dlp` metadata),
+  and transcript **download** wherever the feed/host already publishes one.
+- Step 2 — actual **transcription** when it's needed: local Whisper
+  (`whisper ep.mp3 --model small`) runs entirely on-device, no API call, no
+  token cost. Prefer it over cloud ASR by default; cloud ASR is the one
+  paid fallback in this whole pipeline and only kicks in if the user opted
+  into it (Step 2's remembered `transcription_method` preference).
+- Recording ledger state after each extractor (`ledger.py record`,
+  `check-prediction`) — plain file writes.
+
+**Requires Claude (this is where tokens actually go):**
+- Step 3 — the extraction itself. Turning a full transcript into shaped
+  findings (mechanics, tagged claims, predictions, fluff ratio) is
+  language understanding, not pattern matching — this is the one
+  irreducible token cost in the whole pipeline, and it's also the entire
+  point of the skill (distillation, not just fetching).
+- Step 3.5 — judging whether fresh findings confirm/refute/stale-out an
+  open prediction; dedup's token-overlap output is a mechanical candidate
+  list, but deciding whether two candidates are actually the same claim
+  needs judgment.
+- Step 4 — cross-episode synthesis (repetition-as-signal, contradictions,
+  decay, lens filtering).
+- Step 5 — the report copy itself (headline, tier labels, reasoning
+  prose). The HTML shell is static and reusable; the words in it aren't.
+
+Rule of thumb: if a step is "fetch, parse, store, or pattern-match", push
+it into `resolve.py` / `ledger.py` rather than doing it inline as a
+subagent turn. If a step requires reading prose and deciding what it means,
+that's the token spend this skill exists to justify.
 
 ## Hygiene
 
@@ -269,10 +519,14 @@ no-em-dash copy rule) — don't hand-roll a new report shell per mining run.
 - 12 episodes ≈ 80k words ≈ free via RSS. Whisper on 12 episodes is ~1hr
   of compute. Always check step 2's fallback ladder before reaching for
   Whisper/cloud ASR.
-- State lives in `~/.claude/skills/podcast/config.json` (preferences) and
-  `~/.claude/skills/podcast/state/<show-slug>.json` (per-show ledger:
-  mined episodes, findings paths, predictions). Both are plain JSON,
-  inspectable/editable by hand if the ledger ever needs correcting.
+- State lives in `~/.claude/skills/podcast/config.json` (preferences +
+  `subscriptions`) and `~/.claude/skills/podcast/state/<show-slug>.json`
+  (per-show ledger: mined episodes, findings, predictions). Both are plain
+  JSON, inspectable/editable by hand if the ledger ever needs correcting.
+- To run "check subscriptions" on a cadence instead of only on request, use
+  the `schedule` skill to create a weekly cron-scheduled agent that invokes
+  this skill with that instruction. The manual path keeps working either
+  way — scheduling is opt-in setup, not a requirement.
 
 ## What's deliberately NOT borrowed from prior art
 
@@ -289,7 +543,11 @@ existing Claude Code podcast skills before building the above:
   skipped deliberately: that's re-summarizing, which is the exact failure
   mode this skill exists to avoid.
 - VERIDIVE's "DeepWatch" continuous topic-monitoring is the closest
-  existing analogue to Step 3.5's dedup/prediction-tracking; this skill's
-  version is a manual-trigger, dependency-free, token-overlap pass rather
-  than a standing background watcher — right-sized for a skill invoked
-  on demand, not a running service.
+  existing analogue to Step 3.5's dedup/prediction-tracking. This skill's
+  version stayed a manual-trigger, dependency-free, token-overlap pass
+  through 2026-07-16 — right-sized for a skill invoked on demand, not a
+  running service. Subscriptions + scheduled "check subscriptions" runs
+  (added since, see Step 0 and Hygiene) close some of that gap, but the
+  underlying dedup/prediction logic is still the same token-overlap pass,
+  just invoked on a cadence instead of only on request — not a rebuild into
+  a standing watcher service.
