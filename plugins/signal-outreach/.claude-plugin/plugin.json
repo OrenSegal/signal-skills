@@ -1,0 +1,10 @@
+{
+  "name": "signal-outreach",
+  "version": "1.0.0",
+  "description": "Turns a signal-scout prospect report into the right next action per prospect type: outreach sequences for Individuals, content/GTM briefs for Segments, BD pitches for Companies. Never sends anything automatically.",
+  "author": { "name": "Oren Segal" },
+  "homepage": "https://github.com/OrenSegal/signal-skills",
+  "repository": "https://github.com/OrenSegal/signal-skills",
+  "license": "MIT",
+  "keywords": ["claude", "claude-code", "claude-code-skill", "outreach", "plugin"]
+}
