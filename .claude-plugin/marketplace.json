@@ -1,8 +1,13 @@
 {
-  "name": "oren-podcast-skills",
+  "name": "oren-signal-skills",
   "owner": { "name": "Oren Segal" },
+  "description": "Research and product-signal mining skills for Claude Code: podcasts, app/store reviews, prioritized build ideas, and shared report rendering.",
   "plugins": [
-    { "name": "signal-scout", "source": "./plugins/signal-scout", "version": "1.0.0" },
-    { "name": "podcast", "source": "./plugins/podcast", "version": "1.1.0" }
+    { "name": "signal-scout", "source": "./plugins/signal-scout", "description": "Render ranked findings into a themed, shareable report.", "version": "1.1.0", "license": "MIT", "keywords": ["report", "rendering"] },
+    { "name": "podcast", "source": "./plugins/podcast", "description": "Mine podcasts (Apple, Spotify, RSS, YouTube) into extracted findings, predictions, and a queryable corpus.", "version": "2.0.0", "license": "MIT", "keywords": ["podcast", "research"] },
+    { "name": "review-scout", "source": "./plugins/review-scout", "description": "Mine app/store/web reviews into ranked findings, regressions, and feature-request clusters.", "version": "1.0.0", "license": "MIT", "keywords": ["reviews", "app-store"] },
+    { "name": "ideation", "source": "./plugins/ideation", "description": "Turn podcast/review-scout findings into prioritized, cited build-next proposals.", "version": "1.0.0", "license": "MIT", "keywords": ["prioritization", "ideation"] },
+    { "name": "research-suite", "source": "./plugins/research-suite", "description": "Router/map for this whole skill family; user-invoked only.", "version": "1.0.0", "license": "MIT", "keywords": ["router"] },
+    { "name": "signal-outreach", "source": "./plugins/signal-outreach", "description": "Turn a signal-scout prospect report into ready-to-send outreach sequences, content briefs, and BD pitches.", "version": "1.0.0", "license": "MIT", "keywords": ["outreach", "sales"] }
   ]
 }

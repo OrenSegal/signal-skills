@@ -1,0 +1,10 @@
+{
+  "name": "ideation",
+  "version": "1.0.0",
+  "description": "Turn findings already mined by podcast/review-scout into prioritized, cited build/test-next proposals. Every proposal points at the specific finding(s) that motivated it; a small ledger tracks proposed/shipped/rejected/parked status so re-runs don't repeat themselves.",
+  "author": { "name": "Oren Segal" },
+  "homepage": "https://github.com/OrenSegal/signal-skills",
+  "repository": "https://github.com/OrenSegal/signal-skills",
+  "license": "MIT",
+  "keywords": ["claude", "claude-code", "claude-code-skill", "prioritization", "ideation"]
+}

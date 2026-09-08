@@ -116,8 +116,8 @@ h1 {
   border-radius: 6px;
   padding: 1rem 1.2rem 1.1rem;
 }
-.item-top { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 0.5rem; }
-.item h3 { font-size: 1rem; font-weight: 700; margin: 0; line-height: 1.35; flex: 1; text-wrap: balance; }
+.item-top { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.35rem 0.5rem; margin-bottom: 0.5rem; }
+.item h3 { font-size: 1rem; font-weight: 700; margin: 0; line-height: 1.35; flex: 1 1 100%; text-wrap: balance; }
 .tag {
   font-family: ui-monospace, monospace;
   font-size: 0.6rem;
@@ -132,6 +132,7 @@ h1 {
 .tag.sig { color: var(--sig); background: var(--sig-bg); }
 .tag.mid { color: var(--mid); background: var(--mid-bg); }
 .tag.alert { color: var(--alert); background: var(--alert-bg); }
+.tag.off { color: var(--off); background: var(--off-bg); }
 .item p { font-size: 0.93rem; margin: 0 0 0.5rem; color: var(--ink); }
 .item .src { font-family: ui-monospace, monospace; font-size: 0.72rem; color: var(--ink-dim); }
 footer {
@@ -146,6 +147,124 @@ footer {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/* ---- filter/sort toolbar (rendered by render_report.py, not hand-authored
+   per report) ---- */
+.control-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--void) 92%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 0.9rem 0 0.85rem;
+  margin: 0 0 1.8rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.control-row.chips { gap: 0.4rem; }
+.chip {
+  font-family: ui-monospace, monospace;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+}
+.chip:hover { border-color: var(--chip-color, var(--sig)); color: var(--ink); transform: translateY(-1px); }
+.chip:active { transform: translateY(0); }
+.chip.active { background: var(--chip-bg, var(--sig-bg)); border-color: var(--chip-color, var(--sig)); color: var(--chip-color, var(--sig)); }
+.field { position: relative; display: flex; align-items: center; }
+.field-label {
+  position: absolute;
+  left: 0.6rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  top: -0.5rem;
+  background: var(--void);
+  padding: 0 0.3rem;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.control-select, .control-text {
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.42rem 1.7rem 0.42rem 0.65rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2383887A' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  min-width: 8.5rem;
+}
+.control-text { cursor: text; background-image: none; padding-right: 0.65rem; min-width: 11rem; }
+.control-select:hover, .control-text:hover { border-color: var(--sig); }
+.control-select:focus, .control-text:focus {
+  outline: none;
+  border-color: var(--sig);
+  box-shadow: 0 0 0 3px var(--sig-bg);
+}
+.control-reset {
+  font-family: ui-monospace, monospace;
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.control-reset:hover { color: var(--alert); border-color: var(--alert); }
+.control-count {
+  font-family: ui-monospace, monospace;
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.topic-pill {
+  font-family: ui-monospace, monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.12rem 0.45rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.12s, color 0.12s;
+}
+.topic-pill:hover { border-color: var(--sig); color: var(--sig); }
+.item .src b.show-link { cursor: pointer; }
+.item .src b.show-link:hover { text-decoration: underline; }
+.is-hidden { display: none !important; }
+@media (max-width: 560px) {
+  .control-select, .control-text { min-width: 0; flex: 1 1 auto; }
+  .control-count { margin-left: 0; flex-basis: 100%; }
+}
 </style>
 
 <div class="wrap">
@@ -153,13 +272,22 @@ footer {
   <h1>REPLACE_HEADLINE</h1>
   <p class="query">REPLACE_QUERY_RESTATEMENT</p>
 
+  <!-- Control bar, tier-chips, dropdowns and the filter/sort <script> are all
+       generated by render_report.py from the payload's tiers/items — never
+       hand-author this block per report, it's the reusable part. -->
+  REPLACE_CONTROL_BAR
+
   <!-- Repeat this tier block for every priority tier in scope. Every tier
        renders even with 1-2 items. Order items within a tier by
        confidence: confirmed-twice, measured, anecdotal, single-sourced,
        unresolved. The `.bars` element is a real signal-strength readout,
        not decoration — fill count should match the tier's actual rank
-       (tier 1 of 5 = 5 filled, tier 5 of 5 = 1 filled). -->
-  <div class="tier-head">
+       (tier 1 of 5 = 5 filled, tier 5 of 5 = 1 filled). Each tier-head
+       carries data-tier-key and each item carries data-tier/data-show/
+       data-topic/data-confidence/data-date so the control bar's filter/sort
+       script (see REPLACE_CONTROL_BAR above) can operate on it without any
+       report-specific JS. -->
+  <div class="tier-head" data-tier-key="REPLACE_TIER_KEY">
     <div class="bars" style="--bar-color: var(--sig)"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
     <div class="titles">
       <div class="label">Tier label, e.g. Ship before the deadline</div>
@@ -167,7 +295,7 @@ footer {
     </div>
   </div>
   <div class="item-list">
-    <div class="item" style="border-left-color: var(--sig)">
+    <div class="item" style="border-left-color: var(--sig)" data-tier="REPLACE_TIER_KEY" data-show="REPLACE_SHOW" data-topic="REPLACE_TOPIC" data-confidence="0" data-date="REPLACE_DATE">
       <div class="item-top">
         <h3>REPLACE_FINDING_CLAIM</h3>
         <span class="tag sig">confirmed twice</span>
@@ -182,3 +310,4 @@ footer {
     <span>REPLACE_STATE_OR_LEDGER_PATH</span>
   </footer>
 </div>
+REPLACE_FILTER_SCRIPT
