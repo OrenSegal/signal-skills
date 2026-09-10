@@ -1,6 +1,6 @@
 {
   "name": "signal-skills",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Install the signal-skills family (podcast, review-scout, ideation, signal-scout, research-suite, signal-outreach) into ~/.claude/skills",
   "bin": {
     "signal-skills": "./bin/install.js"

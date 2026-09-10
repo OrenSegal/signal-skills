@@ -5,6 +5,11 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+- Added `evals/signal-scout/` — skill-behavior evals for the bundled
+  `signal-scout` plugin, gated in CI via `litmus gate` against a checked-in
+  baseline. Same suite as upstream signal-scout's own evals, since the
+  bundled `SKILL.md` is byte-identical; catches behavior regressions in the
+  distributed copy, not just the source repo.
 - Added a `tests/` suite (stdlib `unittest`, no new dependency) covering
   each plugin's core logic: cross-show/cross-batch dedup scoring, prediction
   scoreboard and stale-sweep math, RSS/VTT and App Store review parsing, and
