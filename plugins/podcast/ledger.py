@@ -48,6 +48,13 @@ def load_show(slug):
     return load_json(show_path(slug), {"show": slug, "episodes": {}})
 
 
+def _state_files():
+    """Every per-show state file, in a stable (sorted) order. Path.glob order
+    is filesystem-dependent, so iterating it raw makes dedup pair orientation
+    and the order of every cross-show listing vary between machines."""
+    return sorted(STATE_DIR.glob("*.json"))
+
+
 def today():
     return datetime.date.today().isoformat()
 
@@ -114,7 +121,7 @@ def cmd_record(args):
 def cmd_predictions(args):
     """Dump open predictions for a show (or all shows if --show omitted),
     so a re-mining pass can check them against new episodes."""
-    shows = [slugify(args.show)] if args.show else [p.stem for p in STATE_DIR.glob("*.json")]
+    shows = [slugify(args.show)] if args.show else [p.stem for p in _state_files()]
     out = []
     for slug in shows:
         show = load_show(slug)
@@ -153,7 +160,7 @@ def cmd_check_prediction(args):
 # ------------------------------------------------------------------ query
 
 def _iter_shows():
-    for state_file in STATE_DIR.glob("*.json"):
+    for state_file in _state_files():
         yield load_json(state_file, {"show": state_file.stem, "episodes": {}})
 
 
@@ -217,7 +224,7 @@ def cmd_grade_candidates(args):
     a real worklist instead of every open prediction ever recorded."""
     cutoff = (datetime.date.today() - datetime.timedelta(weeks=args.min_weeks)).isoformat()
     out = []
-    for state_file in STATE_DIR.glob("*.json"):
+    for state_file in _state_files():
         show = load_json(state_file, {"show": state_file.stem, "episodes": {}})
         for ep, data in show["episodes"].items():
             for p in data.get("predictions", []):
@@ -234,7 +241,7 @@ def cmd_stale_sweep(args):
     pricing claims rot fast). --dry-run lists candidates without writing."""
     cutoff = (datetime.date.today() - datetime.timedelta(weeks=args.weeks)).isoformat()
     hits = []
-    for state_file in STATE_DIR.glob("*.json"):
+    for state_file in _state_files():
         show = load_json(state_file, {"show": state_file.stem, "episodes": {}})
         if args.show and slugify(args.show) != slugify(show["show"]):
             continue
@@ -270,7 +277,7 @@ def cmd_dedup(args):
     recorded predictions: surfaces candidate repeats/contradictions to check
     by hand, not a verdict. Token-overlap only, no embeddings/ML dependency."""
     claims = []  # (show, episode, text, keyword-set)
-    for state_file in STATE_DIR.glob("*.json"):
+    for state_file in _state_files():
         show = load_json(state_file, {"show": state_file.stem, "episodes": {}})
         for ep, data in show["episodes"].items():
             for p in data.get("predictions", []):

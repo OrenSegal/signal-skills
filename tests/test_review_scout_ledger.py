@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 from _loader import load
 
@@ -80,6 +81,53 @@ class Dedup(IsolatedState):
         self.assertTrue(len(out) >= 1)
         for pair in out:
             self.assertNotEqual(pair["a"]["batch"], pair["b"]["batch"])
+
+    def test_output_independent_of_filesystem_order(self):
+        # glob() order is filesystem-dependent (sorted-looking on APFS,
+        # not on ext4). Force both orders and require the same output, so
+        # dedup pair orientation and known-issues order can't flip.
+        self.write_app("app-a", {
+            "app": "App A",
+            "batches": {"v2.3": {"regressions": ["checkout button crashes on submit"]}},
+        })
+        self.write_app("app-b", {
+            "app": "App B",
+            "batches": {"v2.6": {"regressions": ["checkout button crashes when submitting"]}},
+        })
+        real_glob = Path.glob
+        dedups, issues = [], []
+        for reverse in (False, True):
+            def ordered_glob(path, pattern, _reverse=reverse):
+                return iter(sorted(real_glob(path, pattern), reverse=_reverse))
+            with mock.patch.object(Path, "glob", ordered_glob):
+                dedups.append(json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5)))
+                issues.append(json.loads(self.run_cmd(ledger.cmd_known_issues, app=None)))
+        self.assertEqual(dedups[0], dedups[1])
+        self.assertEqual([(p["a"]["app"], p["b"]["app"]) for p in dedups[1]],
+                         [("App A", "App B")])
+        self.assertEqual(issues[0], issues[1])
+        self.assertEqual([i["app"] for i in issues[1]], ["App A", "App B"])
+
+    def test_same_batch_label_across_apps_not_excluded(self):
+        # Batch labels are per-app ("v2.0" in App A has nothing to do with
+        # "v2.0" in App B), so only a pair from the same app AND the same
+        # batch is skipped.
+        self.write_app("app-a", {
+            "app": "App A",
+            "batches": {"v2.0": {"regressions": [
+                "checkout button crashes on submit",
+                "checkout button crashes on submit again",
+            ]}},
+        })
+        self.write_app("app-b", {
+            "app": "App B",
+            "batches": {"v2.0": {"regressions": ["checkout button crashes when submitting"]}},
+        })
+        out = json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5))
+        pairs = {(p["a"]["app"], p["a"]["batch"], p["b"]["app"], p["b"]["batch"]) for p in out}
+        self.assertIn(("App A", "v2.0", "App B", "v2.0"), pairs)
+        for p in out:
+            self.assertFalse(p["a"]["app"] == p["b"]["app"] and p["a"]["batch"] == p["b"]["batch"])
 
     def test_below_threshold_excluded(self):
         self.write_app("app-a", {
