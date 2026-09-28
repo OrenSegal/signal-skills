@@ -5,6 +5,11 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+- Fixed `podcast`'s `ledger.py` iterating state files in raw `glob()`
+  order, which is filesystem-dependent. `dedup` pair orientation (and the
+  order of every cross-show listing) differed between macOS and Linux, so
+  the `test` job failed on Linux CI. State files are now read in sorted
+  order, with a regression test that forces both orders.
 - Removed `evals/signal-scout/` and its `evals` CI job (both added earlier
   in this release cycle). The fixtures were copied from litmus's
   `examples/signal-scout`, which describes the separate prospect-finding

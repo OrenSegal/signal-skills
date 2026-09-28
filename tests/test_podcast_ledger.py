@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 from _loader import load
 
@@ -240,6 +241,33 @@ class Dedup(IsolatedState):
         self.assertIn(("Show A", "Show B"), shows_in_pairs)
         for p in out:
             self.assertNotEqual(p["a"]["show"], p["b"]["show"])
+
+    def test_output_independent_of_filesystem_order(self):
+        # glob() order is filesystem-dependent (sorted-looking on APFS,
+        # hash/creation order on ext4). Force both orders and require the
+        # same output, so pair orientation can't flip between machines.
+        self.write_show("show-a", {
+            "show": "Show A",
+            "episodes": {"ep1": {"predictions": [
+                {"text": "pricing will drop significantly next quarter", "status": "open", "made_at": "2026-01-01"},
+            ]}},
+        })
+        self.write_show("show-b", {
+            "show": "Show B",
+            "episodes": {"ep1": {"predictions": [
+                {"text": "pricing will drop significantly soon", "status": "open", "made_at": "2026-01-01"},
+            ]}},
+        })
+        real_glob = Path.glob
+        outputs = []
+        for reverse in (False, True):
+            def ordered_glob(path, pattern, _reverse=reverse):
+                return iter(sorted(real_glob(path, pattern), reverse=_reverse))
+            with mock.patch.object(Path, "glob", ordered_glob):
+                outputs.append(json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5)))
+        self.assertEqual(outputs[0], outputs[1])
+        self.assertEqual([(p["a"]["show"], p["b"]["show"]) for p in outputs[1]],
+                         [("Show A", "Show B")])
 
     def test_no_overlap_below_threshold(self):
         self.write_show("show-a", {
