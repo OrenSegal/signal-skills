@@ -166,11 +166,6 @@ plugins/signal-outreach/  turn a signal-scout report into outreach/briefs/pitche
 bin/install.js            npx entry point, installs into Claude Code and/or Codex CLI
 ```
 
-## Support
-
-This is free and MIT-licensed. If it saves you time, you can support
-development via [GitHub Sponsors](https://github.com/sponsors/OrenSegal).
-
 ## License
 
 MIT
