@@ -161,8 +161,10 @@ def cmd_dedup(args):
     for i in range(len(claims)):
         for j in range(i + 1, len(claims)):
             a, b = claims[i], claims[j]
-            if a[1] == b[1]:
-                continue  # same-batch repeats aren't cross-version signal
+            # Same app + same batch isn't cross-version signal. Batch labels
+            # are per-app, so the same label in two apps is not a repeat.
+            if a[0] == b[0] and a[1] == b[1]:
+                continue
             overlap = a[3] & b[3]
             if not a[3] or not b[3]:
                 continue

@@ -108,6 +108,27 @@ class Dedup(IsolatedState):
         self.assertEqual(issues[0], issues[1])
         self.assertEqual([i["app"] for i in issues[1]], ["App A", "App B"])
 
+    def test_same_batch_label_across_apps_not_excluded(self):
+        # Batch labels are per-app ("v2.0" in App A has nothing to do with
+        # "v2.0" in App B), so only a pair from the same app AND the same
+        # batch is skipped.
+        self.write_app("app-a", {
+            "app": "App A",
+            "batches": {"v2.0": {"regressions": [
+                "checkout button crashes on submit",
+                "checkout button crashes on submit again",
+            ]}},
+        })
+        self.write_app("app-b", {
+            "app": "App B",
+            "batches": {"v2.0": {"regressions": ["checkout button crashes when submitting"]}},
+        })
+        out = json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5))
+        pairs = {(p["a"]["app"], p["a"]["batch"], p["b"]["app"], p["b"]["batch"]) for p in out}
+        self.assertIn(("App A", "v2.0", "App B", "v2.0"), pairs)
+        for p in out:
+            self.assertFalse(p["a"]["app"] == p["b"]["app"] and p["a"]["batch"] == p["b"]["batch"])
+
     def test_below_threshold_excluded(self):
         self.write_app("app-a", {
             "app": "App A",

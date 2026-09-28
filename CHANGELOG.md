@@ -11,6 +11,10 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   differed between macOS and Linux, so the `test` job failed on Linux CI.
   State files are now read in sorted order, with a regression test per
   plugin that forces both orders.
+- Fixed `review-scout`'s `dedup` skipping any pair whose batch labels
+  matched, even across different apps, so App A `v2.0` and App B `v2.0`
+  were never compared. It now skips only pairs from the same app and the
+  same batch.
 - Removed `evals/signal-scout/` and its `evals` CI job (both added earlier
   in this release cycle). The fixtures were copied from litmus's
   `examples/signal-scout`, which describes the separate prospect-finding
