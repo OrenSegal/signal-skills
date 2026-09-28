@@ -59,6 +59,13 @@ def load_app(slug):
     return load_json(app_path(slug), {"app": slug, "batches": {}})
 
 
+def _state_files():
+    """Every per-app state file, in a stable (sorted) order. Path.glob order
+    is filesystem-dependent, so iterating it raw makes dedup pair orientation
+    and the known-issues listing order vary between machines."""
+    return sorted(STATE_DIR.glob("*.json"))
+
+
 def today():
     return datetime.date.today().isoformat()
 
@@ -115,7 +122,7 @@ def cmd_known_issues(args):
     """Dump every complaint/topic recorded across all mined batches for an
     app (or all apps if --app omitted), so a fresh mining pass can check
     whether something already-flagged-fixed has come back."""
-    apps = [slugify(args.app)] if args.app else [p.stem for p in STATE_DIR.glob("*.json")]
+    apps = [slugify(args.app)] if args.app else [p.stem for p in _state_files()]
     out = []
     for slug in apps:
         app = load_app(slug)
@@ -143,7 +150,7 @@ def cmd_dedup(args):
     version) to check by hand, not a verdict. Token-overlap only, no
     embeddings/ML dependency."""
     claims = []  # (app, batch, text, keyword-set)
-    for state_file in STATE_DIR.glob("*.json"):
+    for state_file in _state_files():
         app = load_json(state_file, {"app": state_file.stem, "batches": {}})
         for batch, data in app["batches"].items():
             for r in data.get("regressions", []):

@@ -5,11 +5,12 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
-- Fixed `podcast`'s `ledger.py` iterating state files in raw `glob()`
-  order, which is filesystem-dependent. `dedup` pair orientation (and the
-  order of every cross-show listing) differed between macOS and Linux, so
-  the `test` job failed on Linux CI. State files are now read in sorted
-  order, with a regression test that forces both orders.
+- Fixed `podcast`'s and `review-scout`'s `ledger.py` iterating state files
+  in raw `glob()` order, which is filesystem-dependent. `dedup` pair
+  orientation (and the order of every cross-show/cross-app listing)
+  differed between macOS and Linux, so the `test` job failed on Linux CI.
+  State files are now read in sorted order, with a regression test per
+  plugin that forces both orders.
 - Removed `evals/signal-scout/` and its `evals` CI job (both added earlier
   in this release cycle). The fixtures were copied from litmus's
   `examples/signal-scout`, which describes the separate prospect-finding
@@ -21,9 +22,12 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   deterministic behavior is covered by `tests/test_render_report.py` in the
   `test` job.
 - Added a `tests/` suite (stdlib `unittest`, no new dependency) covering
-  each plugin's core logic: cross-show/cross-batch dedup scoring, prediction
-  scoreboard and stale-sweep math, RSS/VTT and App Store review parsing, and
-  `render_report.py` payload validation/rendering.
+  `podcast`'s `ledger.py`/`resolve.py`, `review-scout`'s
+  `ledger.py`/`resolve.py`, and `signal-scout`'s `render_report.py`:
+  cross-show/cross-batch dedup scoring, prediction scoreboard and
+  stale-sweep math, RSS/VTT and App Store review parsing, and payload
+  validation/rendering. `ideation`, `research-suite`, and `signal-outreach`
+  have no tests yet.
 - Added a `test` job to CI that runs the suite on every push and pull
   request, alongside the existing shared-file drift check.
 - Added `CONTRIBUTING.md` (setup, how to run tests, the shared-file sync
