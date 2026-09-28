@@ -3,8 +3,9 @@
 All notable changes to this repository are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## 1.0.1 (2026-09-28)
 
+- Removed the README sponsor section and `.github/FUNDING.yml`.
 - Fixed `podcast`'s and `review-scout`'s `ledger.py` iterating state files
   in raw `glob()` order, which is filesystem-dependent. `dedup` pair
   orientation (and the order of every cross-show/cross-app listing)
