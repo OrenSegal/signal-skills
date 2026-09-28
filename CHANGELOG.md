@@ -5,11 +5,16 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
-- Added `evals/signal-scout/` — skill-behavior evals for the bundled
-  `signal-scout` plugin, gated in CI via `litmus gate` against a checked-in
-  baseline. Same suite as upstream signal-scout's own evals, since the
-  bundled `SKILL.md` is byte-identical; catches behavior regressions in the
-  distributed copy, not just the source repo.
+- Removed `evals/signal-scout/` and its `evals` CI job (both added earlier
+  in this release cycle). The fixtures were copied from litmus's
+  `examples/signal-scout`, which describes the separate prospect-finding
+  signal-scout repo (individuals, segments, openers). The `signal-scout`
+  plugin here is a report renderer and never produces that output, and its
+  `SKILL.md` is not the same file as the upstream one. The fixture outputs
+  were hand-written and graded against a baseline without running any
+  skill, so the job could not catch a regression here. The renderer's
+  deterministic behavior is covered by `tests/test_render_report.py` in the
+  `test` job.
 - Added a `tests/` suite (stdlib `unittest`, no new dependency) covering
   each plugin's core logic: cross-show/cross-batch dedup scoring, prediction
   scoreboard and stale-sweep math, RSS/VTT and App Store review parsing, and
