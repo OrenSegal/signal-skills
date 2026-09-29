@@ -1,102 +1,61 @@
 # signal-skills
 
-Six skills, shipped together, for both Claude Code and Codex CLI — both
-tools read the identical `SKILL.md`-plus-scripts folder shape, just from
-different homes (`~/.claude/skills` vs `~/.codex/skills`).
+Six agent skills for Claude Code and Codex CLI that mine podcasts and user reviews for findings, turn those findings into build proposals, and render the results as a shareable report.
 
-- **`podcast`** — resolve any podcast URL (Apple Podcasts, Spotify, direct
-  RSS, or YouTube) to its feed/transcripts, mine episodes for ideas without
-  dumping raw transcript into context, track falsifiable predictions across
-  episodes, dedup cross-show claims, and answer questions straight out of
-  the corpus you've already built up.
-- **`review-scout`** — the same extract-don't-summarize discipline, applied
-  to user reviews instead of podcast transcripts: mobile app store, browser
-  extension, or web/SaaS feedback into ranked bugs, feature-request
-  clusters, and cross-version regressions. Uses only compliant, ToS-safe
-  sources — Apple's public RSS feed and Google's official Play Developer
-  API — and says so explicitly wherever no compliant path exists.
-- **`ideation`** — reads `podcast`'s and `review-scout`'s findings and turns
-  them into prioritized, cited build/test-next proposals. A finding isn't a
-  decision; this is the one step further, with a ledger so it doesn't
-  re-propose the same idea every run.
-- **`signal-scout`** — the shared reporting stage, and the SSOT for
-  `render_report.py`/`template.html`. Renders a findings payload into one
-  prioritized, shareable Artifact. `podcast`, `review-scout`, and `ideation`
-  each ship a *generated* copy of those two files, not a symlink or a
-  runtime import — `/plugin install <name>@oren-signal-skills` fetches only
-  that one plugin's directory, so a cross-plugin reference resolves to
-  nothing (this broke once; see `scripts/sync-shared-files.sh`). Run that
-  script after editing `signal-scout`'s source to regenerate the three
-  copies; `--check` gates CI so a hand-edited copy can't silently drift.
-  `signal-scout` is also independently useful for any other source type
-  that wants the same report shape.
-- **`research-suite`** — a router/map skill for the mining/ideation/
-  reporting four: which one fits which ask, and how the shared infra fits
-  together. User-invoked only, never fires on its own.
-- **`signal-outreach`** — takes a `signal-scout` prospect report and
-  produces the right next action per prospect type: outreach sequences for
-  Individuals, content/GTM briefs for Segments, BD pitches for Companies.
-  Never sends anything automatically.
+| Skill | What it does |
+|-------|--------------|
+| `podcast` | Mines a podcast (Apple Podcasts, Spotify, RSS, or YouTube) for ideas and predictions, and answers questions from everything mined so far. |
+| `review-scout` | Mines app store, browser extension, or web/SaaS reviews into ranked bugs, feature-request clusters, and cross-version regressions. |
+| `ideation` | Reads the findings from `podcast` and `review-scout` and proposes what to build, fix, or test next, with citations. |
+| `signal-scout` | Renders a findings payload into one prioritized, shareable Artifact. |
+| `research-suite` | A router that tells you which of the skills above fits your request. |
+| `signal-outreach` | Turns a `signal-scout` prospect report into outreach sequences, content briefs, or BD pitches. |
 
-**Naming heads-up:** this `signal-scout` is purely a report-rendering
-skill, unrelated to any other "signal-scout"-named tool you may have
-installed from a different source — same author, different tool, if you
-have both, check which one actually loaded before invoking `/signal-scout`.
+Both tools read the same folder shape (`SKILL.md` plus scripts), just from different homes: `~/.claude/skills` for Claude Code and `~/.codex/skills` for Codex.
 
-## What it does beyond a one-shot transcript summary
+## The skills
 
-Every mining run writes to a per-show/per-app ledger (`ledger.py`), so the
-value compounds across runs instead of resetting each time:
+**`podcast`** resolves a podcast URL to its feed or transcripts and mines episodes for ideas without dumping raw transcript into context. It tracks falsifiable predictions across episodes, dedups claims that show up on several shows, and answers questions straight out of the corpus you've built up.
 
-- **Query the corpus, not just the last run.** `ledger.py query --topic
-  pricing` searches every finding `podcast` has ever recorded, across every
-  show, without re-fetching a single transcript.
-- **A prediction scoreboard.** Every falsifiable prediction a guest makes
-  gets tracked and later resolved confirmed/failed/stale. `ledger.py
-  scoreboard [--by-guest]` turns that into a hit-rate leaderboard: which
-  shows (or guests) are actually right, over time, not just confident.
-- **Watch shows on a cadence.** `ledger.py subscribe --show <url>` plus a
-  `schedule`-skill cron job turns "mine this when I remember to ask" into a
-  digest that shows up on its own, only for episodes that are actually new.
-- **Web cross-checks.** Load-bearing claims and open predictions can be
-  checked against independent sources on the open web (Claude Code's
-  `WebSearch`), so a confirmed prediction carries an actual citation, not
-  just "a later episode agreed."
-- **Cross-version regression detection.** `review-scout` flags a complaint
-  that token-overlaps with something already marked fixed in an earlier
-  app version — the single most valuable thing review mining can surface.
-- **Findings become decisions.** `ideation` reads across both mining
-  skills' ledgers and proposes what to build/fix/test next, citing exactly
-  which findings motivated it.
-- **Token-aware by design.** Extraction is batched by transcript word count
-  and runs on a cheap/fast model; only synthesis, contradiction-spotting,
-  and web-check judgment calls use the full session model. Report HTML is
-  generated by a deterministic script — zero tokens for the markup itself.
+**`review-scout`** applies the same extract-don't-summarize approach to user reviews. It only uses compliant, ToS-safe sources (Apple's public RSS feed and Google's official Play Developer API), and says so explicitly wherever no compliant path exists.
 
-See each skill's `SKILL.md` for the full mechanics (it's the actual spec
-the skill runs on, not just docs) — or `plugins/research-suite/SKILL.md`
-for the short version of which one to reach for.
+**`ideation`** goes one step past a finding: it turns findings into prioritized, cited proposals. A ledger keeps it from re-proposing the same idea on every run.
 
-### Requirements
+**`signal-scout`** is the shared reporting stage. It also works for any other source type that wants the same report shape.
 
-- Python 3 (stdlib only for Apple/Spotify/RSS/App Store review fetching —
-  no extra packages).
-- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) on `PATH` — only needed for
-  YouTube URLs (`brew install yt-dlp`, `pipx install yt-dlp`). Apple/Spotify/
-  RSS mining works without it.
-- `google-api-python-client` + `google-auth` — only needed for
-  `review-scout`'s Android/Play Store path (your own app only, needs a
-  service account); iOS review mining needs nothing extra.
+**`research-suite`** maps the four mining, ideation, and reporting skills: which one fits which request, and how the shared pieces fit together. It is user-invoked only and never fires on its own.
+
+**`signal-outreach`** picks the next action for each prospect type in a `signal-scout` prospect report: outreach sequences for Individuals, content/GTM briefs for Segments, BD pitches for Companies. It never sends anything automatically.
+
+**Name clash:** this `signal-scout` only renders reports. It is unrelated to any other tool called "signal-scout" you may have installed from a different source (same author, different tool). If you have both, check which one loaded before invoking `/signal-scout`.
+
+## Beyond a one-shot summary
+
+Each mining run writes to a per-show or per-app ledger (`ledger.py`), so results build up across runs instead of resetting.
+
+- **Query the whole corpus.** `ledger.py query --topic pricing` searches every finding `podcast` has recorded, across every show, without re-fetching transcripts.
+- **Prediction scoreboard.** Falsifiable predictions made by guests are tracked and later resolved as confirmed, failed, or stale. `ledger.py scoreboard [--by-guest]` turns that into a hit-rate leaderboard showing which shows (or guests) turned out to be right over time.
+- **Watch shows on a schedule.** `ledger.py subscribe --show <url>` combined with a `schedule`-skill cron job gives you a digest of new episodes without having to ask.
+- **Web cross-checks.** Key claims and open predictions can be checked against independent sources on the open web (Claude Code's `WebSearch`). A confirmed prediction then carries a real citation, not just "a later episode agreed."
+- **Regression detection.** `review-scout` flags a complaint whose wording overlaps with something already marked fixed in an earlier app version.
+- **From findings to decisions.** `ideation` reads both mining skills' ledgers and proposes what to build, fix, or test next, citing the findings behind each proposal.
+- **Token use.** Extraction is batched by transcript word count and runs on a cheap, fast model. Only synthesis, contradiction-spotting, and web-check judgment calls use the full session model. A deterministic script generates the report HTML, so the markup costs no tokens.
+
+Each skill's `SKILL.md` is the spec the skill actually runs on and has the full details. For a short guide to picking one, read `plugins/research-suite/SKILL.md`.
+
+## Requirements
+
+- Python 3. Fetching from Apple, Spotify, RSS, and App Store reviews uses only the standard library.
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) on `PATH`, only for YouTube URLs (`brew install yt-dlp` or `pipx install yt-dlp`).
+- `google-api-python-client` and `google-auth`, only for `review-scout`'s Android/Play Store path. That path works for your own app only and needs a service account. iOS review mining needs nothing extra.
 
 ## Install
-
-Pick whichever install path fits your setup. All of them land all six
-skills.
 
 ### Claude Code plugin (recommended for Claude Code)
 
 ```
 /plugin marketplace add OrenSegal/signal-skills
+/plugin install signal-scout@oren-signal-skills
 /plugin install podcast@oren-signal-skills
 /plugin install review-scout@oren-signal-skills
 /plugin install ideation@oren-signal-skills
@@ -104,24 +63,18 @@ skills.
 /plugin install signal-outreach@oren-signal-skills
 ```
 
-Each plugin is standalone (no cross-plugin runtime dependency) — install
-only the ones you want. Skills are invoked as `/podcast`, `/review-scout`,
-`/ideation`, `/signal-scout`, `/research-suite`, `/signal-outreach`
-(single-skill plugins, so no `plugin:skill` prefix needed).
+Each plugin is standalone, so install only the ones you want. Invoke them as `/podcast`, `/review-scout`, `/ideation`, `/signal-scout`, `/research-suite`, and `/signal-outreach`. No `plugin:skill` prefix is needed because each plugin holds a single skill.
 
 ### Codex CLI
 
-Codex has no plugin/marketplace layer, just skill folders. Drop whichever
-you want directly into your global skills folder:
+Codex has no plugin or marketplace layer, only skill folders. Copy the ones you want into your global skills folder:
 
 ```
 git clone https://github.com/OrenSegal/signal-skills /tmp/signal-skills
 cp -r /tmp/signal-skills/plugins/{podcast,review-scout,ideation,signal-scout,research-suite,signal-outreach} ~/.codex/skills/
 ```
 
-Or use the npx installer below, it detects `~/.codex` and writes there too.
-Codex reads global skills from `~/.codex/skills/<name>/SKILL.md`; see
-[developers.openai.com/codex/skills](https://developers.openai.com/codex/skills).
+Codex reads global skills from `~/.codex/skills/<name>/SKILL.md` (see [developers.openai.com/codex/skills](https://developers.openai.com/codex/skills)). The npx installer below also detects `~/.codex` and writes there.
 
 ### skills.sh
 
@@ -135,14 +88,11 @@ npx skills add OrenSegal/signal-skills
 npx signal-skills
 ```
 
-Detects which of `~/.claude` and `~/.codex` exist on your machine and copies
-all six skills into whichever it finds (both, if you have both installed).
-Falls back to `~/.claude/skills` if neither is present yet. Safe to re-run —
-it never clobbers a `config.json` you've already customized.
+The installer checks which of `~/.claude` and `~/.codex` exist and copies all six skills into each one it finds. If neither exists yet, it falls back to `~/.claude/skills`. Re-running is safe: it never overwrites a `config.json` you've customized.
 
 ## Usage
 
-Once installed, just talk to it, the skill picks the right path:
+Once installed, describe what you want in plain language and the skill picks the right path:
 
 ```
 mine https://podcasts.apple.com/us/podcast/.../id123456 for takeaways on pricing
@@ -165,6 +115,12 @@ plugins/signal-outreach/  turn a signal-scout report into outreach/briefs/pitche
 .claude-plugin/marketplace.json   marketplace manifest for all six Claude Code plugins
 bin/install.js            npx entry point, installs into Claude Code and/or Codex CLI
 ```
+
+## Development
+
+`plugins/signal-scout` holds the single authored copy of `render_report.py` and `template.html`. `podcast`, `review-scout`, and `ideation` each ship a generated copy of those two files instead of a symlink or runtime import. The reason: `/plugin install <name>@oren-signal-skills` fetches only that plugin's directory, so a cross-plugin reference resolves to nothing (this broke once).
+
+After editing the `signal-scout` source, run `scripts/sync-shared-files.sh` to regenerate the three copies. CI runs `scripts/sync-shared-files.sh --check` so a hand-edited copy can't drift unnoticed.
 
 ## License
 
