@@ -66,7 +66,7 @@ three speculative podcast takeaways with no repeat citation.
 ## Step 4 — Report (shared renderer)
 
 Same `render_report.py`/`template.html` as the other three skills
-(a real copy here, kept in sync with the canonical one in `signal-scout`
+(a real copy here, kept in sync with the canonical one in `signal-report`
 — packaged plugins ship real files, not symlinks, so this installs standalone). Tiers should reflect decision-readiness, not just
 severity — e.g. "Ship now (cheap, confirmed)", "Worth a spike (confidence
 gap)", "Needs more data before deciding", "Parked (rejected once, revisit

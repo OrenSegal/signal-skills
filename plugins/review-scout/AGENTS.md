@@ -28,8 +28,8 @@ Claude-specific at all — the App Store RSS feed and Play Developer API
 calls are plain HTTP, identical under any harness.
 
 > `render_report.py` and `template.html` in this directory are generated
-> copies of `plugins/signal-scout/{render_report.py,template.html}` (the
+> copies of `plugins/signal-report/{render_report.py,template.html}` (the
 > SSOT) - kept as physical files, not symlinks, so this plugin still
 > installs standalone via `/plugin install review-scout@oren-signal-skills`. Never
-> hand-edit them; edit the signal-scout originals and run
+> hand-edit them; edit the signal-report originals and run
 > `scripts/sync-shared-files.sh` from the repo root.

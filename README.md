@@ -7,9 +7,9 @@ Six agent skills for Claude Code and Codex CLI that mine podcasts and user revie
 | `podcast` | Mines a podcast (Apple Podcasts, Spotify, RSS, or YouTube) for ideas and predictions, and answers questions from everything mined so far. |
 | `review-scout` | Mines app store, browser extension, or web/SaaS reviews into ranked bugs, feature-request clusters, and cross-version regressions. |
 | `ideation` | Reads the findings from `podcast` and `review-scout` and proposes what to build, fix, or test next, with citations. |
-| `signal-scout` | Renders a findings payload into one prioritized, shareable Artifact. |
+| `signal-report` | Renders a findings payload into one prioritized, shareable Artifact. |
 | `research-suite` | A router that tells you which of the skills above fits your request. |
-| `signal-outreach` | Turns a `signal-scout` prospect report into outreach sequences, content briefs, or BD pitches. |
+| `signal-outreach` | Turns a [signal-scout](https://github.com/OrenSegal/signal-scout) prospect report into outreach sequences, content briefs, or BD pitches. |
 
 Both tools read the same folder shape (`SKILL.md` plus scripts), just from different homes: `~/.claude/skills` for Claude Code and `~/.codex/skills` for Codex.
 
@@ -21,13 +21,13 @@ Both tools read the same folder shape (`SKILL.md` plus scripts), just from diffe
 
 **`ideation`** goes one step past a finding: it turns findings into prioritized, cited proposals. A ledger keeps it from re-proposing the same idea on every run.
 
-**`signal-scout`** is the shared reporting stage. It also works for any other source type that wants the same report shape.
+**`signal-report`** is the shared reporting stage. It also works for any other source type that wants the same report shape.
 
 **`research-suite`** maps the four mining, ideation, and reporting skills: which one fits which request, and how the shared pieces fit together. It is user-invoked only and never fires on its own.
 
 **`signal-outreach`** picks the next action for each prospect type in a `signal-scout` prospect report: outreach sequences for Individuals, content/GTM briefs for Segments, BD pitches for Companies. It never sends anything automatically.
 
-**Name clash:** this `signal-scout` only renders reports. It is unrelated to any other tool called "signal-scout" you may have installed from a different source (same author, different tool). If you have both, check which one loaded before invoking `/signal-scout`.
+**Renamed:** `signal-report` was called `signal-scout` before plugin version 2.0.0. It was renamed so it no longer collides with the separate [signal-scout](https://github.com/OrenSegal/signal-scout) prospect-finding product (same author, different tool). If you installed the old name, remove `~/.claude/skills/signal-scout` (or `/plugin uninstall signal-scout@oren-signal-skills`) unless that folder holds the signal-scout product.
 
 ## Beyond a one-shot summary
 
@@ -55,7 +55,7 @@ Each skill's `SKILL.md` is the spec the skill actually runs on and has the full 
 
 ```
 /plugin marketplace add OrenSegal/signal-skills
-/plugin install signal-scout@oren-signal-skills
+/plugin install signal-report@oren-signal-skills
 /plugin install podcast@oren-signal-skills
 /plugin install review-scout@oren-signal-skills
 /plugin install ideation@oren-signal-skills
@@ -63,7 +63,7 @@ Each skill's `SKILL.md` is the spec the skill actually runs on and has the full 
 /plugin install signal-outreach@oren-signal-skills
 ```
 
-Each plugin is standalone, so install only the ones you want. Invoke them as `/podcast`, `/review-scout`, `/ideation`, `/signal-scout`, `/research-suite`, and `/signal-outreach`. No `plugin:skill` prefix is needed because each plugin holds a single skill.
+Each plugin is standalone, so install only the ones you want. Invoke them as `/podcast`, `/review-scout`, `/ideation`, `/signal-report`, `/research-suite`, and `/signal-outreach`. No `plugin:skill` prefix is needed because each plugin holds a single skill.
 
 ### Codex CLI
 
@@ -71,7 +71,7 @@ Codex has no plugin or marketplace layer, only skill folders. Copy the ones you 
 
 ```
 git clone https://github.com/OrenSegal/signal-skills /tmp/signal-skills
-cp -r /tmp/signal-skills/plugins/{podcast,review-scout,ideation,signal-scout,research-suite,signal-outreach} ~/.codex/skills/
+cp -r /tmp/signal-skills/plugins/{podcast,review-scout,ideation,signal-report,research-suite,signal-outreach} ~/.codex/skills/
 ```
 
 Codex reads global skills from `~/.codex/skills/<name>/SKILL.md` (see [developers.openai.com/codex/skills](https://developers.openai.com/codex/skills)). The npx installer below also detects `~/.codex` and writes there.
@@ -109,18 +109,18 @@ what should we build next based on everything we've mined?
 plugins/podcast/          resolve/mine podcasts (SKILL.md, ledger.py, resolve.py, sources.md)
 plugins/review-scout/     mine app/store/web reviews (SKILL.md, ledger.py, resolve.py)
 plugins/ideation/         findings -> prioritized build proposals (SKILL.md, ledger.py)
-plugins/signal-scout/     shared report renderer (SKILL.md, render_report.py, template.html)
+plugins/signal-report/    shared report renderer (SKILL.md, render_report.py, template.html)
 plugins/research-suite/   router/map skill for the mining/ideation/reporting skills (SKILL.md)
-plugins/signal-outreach/  turn a signal-scout report into outreach/briefs/pitches (SKILL.md, scripts/generate_outreach.py)
+plugins/signal-outreach/  turn a signal-scout report into outreach/briefs/pitches (SKILL.md, scripts/generate_outreach.py, examples/)
 .claude-plugin/marketplace.json   marketplace manifest for all six Claude Code plugins
 bin/install.js            npx entry point, installs into Claude Code and/or Codex CLI
 ```
 
 ## Development
 
-`plugins/signal-scout` holds the single authored copy of `render_report.py` and `template.html`. `podcast`, `review-scout`, and `ideation` each ship a generated copy of those two files instead of a symlink or runtime import. The reason: `/plugin install <name>@oren-signal-skills` fetches only that plugin's directory, so a cross-plugin reference resolves to nothing (this broke once).
+`plugins/signal-report` holds the single authored copy of `render_report.py` and `template.html`. `podcast`, `review-scout`, and `ideation` each ship a generated copy of those two files instead of a symlink or runtime import. The reason: `/plugin install <name>@oren-signal-skills` fetches only that plugin's directory, so a cross-plugin reference resolves to nothing (this broke once).
 
-After editing the `signal-scout` source, run `scripts/sync-shared-files.sh` to regenerate the three copies. CI runs `scripts/sync-shared-files.sh --check` so a hand-edited copy can't drift unnoticed.
+After editing the `signal-report` source, run `scripts/sync-shared-files.sh` to regenerate the three copies. CI runs `scripts/sync-shared-files.sh --check` so a hand-edited copy can't drift unnoticed.
 
 ## License
 

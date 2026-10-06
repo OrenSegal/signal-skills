@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render a findings payload into the signal-scout report template.
+"""Render a findings payload into the signal-report template.
 
 Owns the mechanical part of report generation: HTML/CSS boilerplate,
 per-tier and per-item markup repetition, escaping, and the hard style

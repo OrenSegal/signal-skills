@@ -24,8 +24,8 @@ This skill has no subagent fan-out step (unlike `podcast`/`review-scout`)
 material, so there's nothing to parallelize across.
 
 > `render_report.py` and `template.html` in this directory are generated
-> copies of `plugins/signal-scout/{render_report.py,template.html}` (the
+> copies of `plugins/signal-report/{render_report.py,template.html}` (the
 > SSOT) - kept as physical files, not symlinks, so this plugin still
 > installs standalone via `/plugin install ideation@oren-signal-skills`. Never
-> hand-edit them; edit the signal-scout originals and run
+> hand-edit them; edit the signal-report originals and run
 > `scripts/sync-shared-files.sh` from the repo root.
