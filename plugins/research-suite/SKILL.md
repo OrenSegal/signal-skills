@@ -1,6 +1,6 @@
 ---
 name: research-suite
-description: Router and map for the podcast/review-scout/ideation/signal-scout skill family — explains what each skill does, when to reach for which one, and how the shared infra (render_report.py, template.html, analytics-check.md, per-skill ledgers) fits together. User-invoked only; never fires automatically.
+description: Router and map for the podcast/review-scout/ideation/signal-report skill family — explains what each skill does, when to reach for which one, and how the shared infra (render_report.py, template.html, analytics-check.md, per-skill ledgers) fits together. User-invoked only; never fires automatically.
 disable-model-invocation: true
 ---
 
@@ -11,14 +11,12 @@ to figure out which one to reach for.
 
 ## Naming heads-up
 
-`signal-scout` here is a **local render/report-generation skill** — it
-owns the canonical `render_report.py`/`template.html` the other three
-skills symlink from. If you also have Oren's published `signal-scout`
-GitHub customer-discovery plugin installed, note that it is a **different
-tool with the same name, same author**. If this suite ever gets packaged
-for distribution, rename the local one first (e.g. `report-render`) to
-avoid the collision — noted here rather than silently fixed, since
-renaming touches every symlink in `podcast`/`review-scout`/`ideation`.
+`signal-report` here is a **local render/report-generation skill**. It
+owns the canonical `render_report.py`/`template.html` that the other
+three skills ship generated copies of. It was called `signal-scout`
+before plugin version 2.0.0 and was renamed so it no longer collides with Oren's
+separate `signal-scout` customer-discovery product
+(https://github.com/OrenSegal/signal-scout), which is a different tool.
 
 ## Which skill for which ask
 
@@ -27,7 +25,7 @@ renaming touches every symlink in `podcast`/`review-scout`/`ideation`.
 | "What's this podcast/episode actually saying" | `podcast` | Extracts insights from audio/transcript, not reviews or app-store data |
 | "What are users saying / app reviews / store feedback" | `review-scout` | Same extract-don't-summarize discipline, applied to reviews across mobile/extension/web-SaaS, not audio |
 | "What should we build/fix/test next" | `ideation` | The only one that reads across the other two's findings and produces a prioritized, cited proposal — not another findings dump |
-| "I need a report rendered from a findings payload" | (shared `render_report.py`, lives in `signal-scout`) | Not a research skill itself — the mechanical renderer all three call |
+| "I need a report rendered from a findings payload" | (shared `render_report.py`, lives in `signal-report`) | Not a research skill itself — the mechanical renderer all three call |
 
 If a request doesn't match any row, it's not this family's job — answer
 directly or say so.
@@ -35,7 +33,8 @@ directly or say so.
 ## Shared infra map
 
 - **`render_report.py` / `template.html`** — canonical copies live in
-  `signal-scout`; `podcast`, `review-scout`, `ideation` symlink both.
+  `signal-report`; `podcast`, `review-scout`, `ideation` ship generated
+  copies (see `scripts/sync-shared-files.sh`).
   Mechanically enforces no-em-dash, required confidence tags, and
   theme-token safety — not manual-review rules anymore.
 - **`analytics-check.md`** — canonical copy lives in `podcast`;

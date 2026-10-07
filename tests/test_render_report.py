@@ -3,7 +3,7 @@ from pathlib import Path
 
 from _loader import load
 
-rr = load("signal-scout", "render_report.py")
+rr = load("signal-report", "render_report.py")
 
 
 def make_payload(**overrides):

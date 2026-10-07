@@ -1,7 +1,7 @@
 {
   "name": "podcast",
   "version": "2.0.0",
-  "description": "Pull any podcast's transcripts (Apple Podcasts, Spotify, RSS, YouTube) and mine them for ideas, trends, and mechanics without dumping raw transcript into context. Corpus query, prediction scoreboard, subscriptions, and optional web cross-checks. Renders its own reports standalone, no runtime dependency on signal-scout.",
+  "description": "Pull any podcast's transcripts (Apple Podcasts, Spotify, RSS, YouTube) and mine them for ideas, trends, and mechanics without dumping raw transcript into context. Corpus query, prediction scoreboard, subscriptions, and optional web cross-checks. Renders its own reports standalone, no runtime dependency on signal-report.",
   "author": { "name": "Oren Segal" },
   "homepage": "https://github.com/OrenSegal/signal-skills",
   "repository": "https://github.com/OrenSegal/signal-skills",

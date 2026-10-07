@@ -369,7 +369,7 @@ no backend is configured; don't fabricate a comparison.
 Chat text or a raw markdown dump doesn't hold up as something to reopen or
 share later. This skill owns its report rendering: `template.html` and
 `render_report.py` (both next to this file, symlinked from the
-`signal-scout` skill so the two never drift, but invoked directly here —
+`signal-report` skill so the two never drift, but invoked directly here —
 no skill-to-skill call at runtime).
 
 **Don't hand-write the report HTML.** Build a JSON payload (see
