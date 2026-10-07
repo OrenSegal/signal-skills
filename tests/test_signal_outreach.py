@@ -51,7 +51,7 @@ class HelperTests(unittest.TestCase):
 
 class ReportTests(unittest.TestCase):
     def test_build_html_smoke(self):
-        data = json.loads(EXAMPLE.read_text())
+        data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
         output = go.build_html(data)
         self.assertIn("<html", output.lower())
         self.assertGreater(len(output), 500)
@@ -69,8 +69,8 @@ class ReportTests(unittest.TestCase):
             # The checked-in rendered example must match what the script
             # produces today, so the example cannot silently go stale.
             self.assertEqual(
-                out_path.read_text(),
-                (EXAMPLES / "outreach-report.html").read_text(),
+                out_path.read_text(encoding="utf-8"),
+                (EXAMPLES / "outreach-report.html").read_text(encoding="utf-8"),
             )
 
 
