@@ -3,7 +3,7 @@
   "owner": { "name": "Oren Segal" },
   "description": "Research and product-signal mining skills for Claude Code: podcasts, app/store reviews, prioritized build ideas, and shared report rendering.",
   "plugins": [
-    { "name": "signal-scout", "source": "./plugins/signal-scout", "description": "Render ranked findings into a themed, shareable report.", "version": "1.1.0", "license": "MIT", "keywords": ["report", "rendering"] },
+    { "name": "signal-report", "source": "./plugins/signal-report", "description": "Render ranked findings into a themed, shareable report.", "version": "2.0.0", "license": "MIT", "keywords": ["report", "rendering"] },
     { "name": "podcast", "source": "./plugins/podcast", "description": "Mine podcasts (Apple, Spotify, RSS, YouTube) into extracted findings, predictions, and a queryable corpus.", "version": "2.0.0", "license": "MIT", "keywords": ["podcast", "research"] },
     { "name": "review-scout", "source": "./plugins/review-scout", "description": "Mine app/store/web reviews into ranked findings, regressions, and feature-request clusters.", "version": "1.0.0", "license": "MIT", "keywords": ["reviews", "app-store"] },
     { "name": "ideation", "source": "./plugins/ideation", "description": "Turn podcast/review-scout findings into prioritized, cited build-next proposals.", "version": "1.0.0", "license": "MIT", "keywords": ["prioritization", "ideation"] },

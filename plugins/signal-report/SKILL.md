@@ -1,5 +1,5 @@
 ---
-name: signal-scout
+name: signal-report
 description: Turn a pile of ranked research findings (from podcast mining, competitor audits, doc sweeps, whatever) into one prioritized Artifact report. Use as the reporting stage of any skill that has already done the extraction and just needs to present it as a shareable, ranked, reasoned page. Not a research method itself, and not a curation step.
 ---
 
@@ -34,7 +34,7 @@ one-line reasoning attached to each finding. Build the JSON payload, then
 run:
 
 ```bash
-python3 ~/.claude/skills/signal-scout/render_report.py payload.json out.html
+python3 ~/.claude/skills/signal-report/render_report.py payload.json out.html
 ```
 
 and publish `out.html` with the `Artifact` tool on Claude Code. On any
@@ -50,7 +50,7 @@ target in the same invocation — same payload, same validation, picked by
 the output file's extension:
 
 ```bash
-python3 ~/.claude/skills/signal-scout/render_report.py payload.json out.html out.md
+python3 ~/.claude/skills/signal-report/render_report.py payload.json out.html out.md
 ```
 
 ## Rules

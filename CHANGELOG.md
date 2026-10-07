@@ -3,6 +3,26 @@
 All notable changes to this repository are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
+## Unreleased
+
+- Renamed the report-rendering skill `signal-scout` to `signal-report`
+  (plugin version 2.0.0) so it no longer collides with the separate
+  [signal-scout](https://github.com/OrenSegal/signal-scout) prospect-finding
+  product. The plugin directory, marketplace entry, installer list,
+  `scripts/sync-shared-files.sh` (source and drift messages), test loader
+  and docs all use the new name. Install with
+  `/plugin install signal-report@oren-signal-skills`; an old
+  `~/.claude/skills/signal-scout` copy from this repo can be removed.
+  References to the signal-scout product (the input to `signal-outreach`)
+  are unchanged.
+- Ported the rest of `signal-outreach` from
+  [first-to-first-sale](https://github.com/OrenSegal/first-to-first-sale),
+  which is now archived: `plugins/signal-outreach/examples/` (an example
+  `outreach-package.json` and its rendered report) and
+  `tests/test_signal_outreach.py`. The skill files were already identical.
+  The test also checks that the checked-in example report matches what
+  `generate_outreach.py` produces.
+
 ## 1.0.1 (2026-09-28)
 
 - Removed the README sponsor section and `.github/FUNDING.yml`.

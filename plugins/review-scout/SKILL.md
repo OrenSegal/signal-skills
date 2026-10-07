@@ -148,8 +148,8 @@ all.
 
 ## Step 5 — Report (shared renderer, no external skill invocation)
 
-Same `render_report.py`/`template.html` as `podcast` and `signal-scout`
-(a real copy here, kept in sync with the canonical one in `signal-scout`
+Same `render_report.py`/`template.html` as `podcast` and `signal-report`
+(a real copy here, kept in sync with the canonical one in `signal-report`
 — packaged plugins ship real files, not symlinks, so this installs
 standalone; see those skills' `SKILL.md` files for the full rule set:
 rank don't cut, no em dashes enforced by the

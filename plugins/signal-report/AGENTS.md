@@ -1,4 +1,4 @@
-# Signal-scout skill — harness-agnostic entry point
+# Signal-report skill — harness-agnostic entry point
 
 If you're being invoked by a harness that doesn't natively read Claude
 Code's `SKILL.md` frontmatter/Skill-tool convention (OpenCode, Codex CLI,
