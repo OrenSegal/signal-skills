@@ -214,6 +214,3 @@ Use `standard` by default.
 - The breakup message is genuinely graceful — no guilt, no pressure.
 - Every Segment brief names concrete content pieces and channels — not "write some blog posts."
 - Every Company pitch has one specific ask under 90 words and uses only a public contact path — never a scraped or personal executive email.
-
-Base directory for this skill: file:///Users/orensegal/Documents/GitHub/first-to-first-sale/signal-outreach
-Relative paths in this skill (e.g., scripts/, references/) are relative to this base directory.

@@ -1,5 +1,7 @@
 # signal-skills
 
+[![CI](https://github.com/OrenSegal/signal-skills/actions/workflows/check-shared-files.yml/badge.svg)](https://github.com/OrenSegal/signal-skills/actions/workflows/check-shared-files.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+
 Six agent skills for Claude Code and Codex CLI that mine podcasts and user reviews for findings, turn those findings into build proposals, and render the results as a shareable report.
 
 | Skill | What it does |
