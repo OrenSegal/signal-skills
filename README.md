@@ -13,7 +13,7 @@ Six agent skills for Claude Code and Codex CLI that mine podcasts and user revie
 | `research-suite` | A router that tells you which of the skills above fits your request. |
 | `signal-outreach` | Turns a [signal-scout](https://github.com/OrenSegal/signal-scout) prospect report into outreach sequences, content briefs, or BD pitches. |
 
-Both tools read the same folder shape (`SKILL.md` plus scripts), just from different homes: `~/.claude/skills` for Claude Code and `~/.codex/skills` for Codex.
+Both tools read the same folder shape (`SKILL.md` plus scripts), just from different homes: `~/.claude/skills` for Claude Code and `~/.agents/skills` for Codex.
 
 ## The skills
 
@@ -69,14 +69,15 @@ Each plugin is standalone, so install only the ones you want. Invoke them as `/p
 
 ### Codex CLI
 
-Codex has no plugin or marketplace layer, only skill folders. Copy the ones you want into your global skills folder:
+Codex has no plugin or marketplace layer, only skill folders. Copy the ones you want into your user skills folder:
 
 ```
 git clone https://github.com/OrenSegal/signal-skills /tmp/signal-skills
-cp -r /tmp/signal-skills/plugins/{podcast,review-scout,ideation,signal-report,research-suite,signal-outreach} ~/.codex/skills/
+mkdir -p ~/.agents/skills
+cp -r /tmp/signal-skills/plugins/{podcast,review-scout,ideation,signal-report,research-suite,signal-outreach} ~/.agents/skills/
 ```
 
-Codex reads global skills from `~/.codex/skills/<name>/SKILL.md` (see [developers.openai.com/codex/skills](https://developers.openai.com/codex/skills)). The installer script below also detects `~/.codex` and writes there.
+Codex reads user skills from `~/.agents/skills/<name>/SKILL.md` (see [Codex skills docs](https://learn.chatgpt.com/docs/build-skills)). It still reads the older `~/.codex/skills`, but that location is deprecated. The installer script below detects `~/.codex` and writes to `~/.agents/skills`.
 
 ### skills.sh
 
@@ -93,7 +94,7 @@ git clone https://github.com/OrenSegal/signal-skills /tmp/signal-skills
 node /tmp/signal-skills/bin/install.js
 ```
 
-The installer checks which of `~/.claude` and `~/.codex` exist and copies all six skills into each one it finds. If neither exists yet, it falls back to `~/.claude/skills`. Re-running is safe: it never overwrites a `config.json` you've customized.
+The installer checks which of `~/.claude` (Claude Code) and `~/.codex` (Codex) exist and copies all six skills into `~/.claude/skills` and `~/.agents/skills` respectively. If neither exists yet, it falls back to `~/.claude/skills`. Re-running is safe: it never overwrites a `config.json` you've customized.
 
 ## Usage
 
