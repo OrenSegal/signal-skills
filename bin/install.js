@@ -10,11 +10,13 @@ const REPO_ROOT = path.join(__dirname, "..");
 const PLUGINS = ["signal-report", "podcast", "review-scout", "ideation", "research-suite", "signal-outreach"];
 
 // Both tools read the identical SKILL.md-plus-scripts folder shape, just from
-// different homes: Claude Code from ~/.claude/skills, Codex CLI (global) from
-// ~/.codex/skills. https://developers.openai.com/codex/skills
+// different homes: Claude Code from ~/.claude/skills
+// (https://code.claude.com/docs/en/skills), Codex CLI (user scope) from
+// ~/.agents/skills (https://learn.chatgpt.com/docs/build-skills; ~/.codex/skills
+// is still read but deprecated). `home` is the tool's own dir, used to detect it.
 const TARGETS = [
-  { tool: "Claude Code", dir: path.join(HOME, ".claude", "skills") },
-  { tool: "Codex CLI", dir: path.join(HOME, ".codex", "skills") },
+  { tool: "Claude Code", home: path.join(HOME, ".claude"), dir: path.join(HOME, ".claude", "skills") },
+  { tool: "Codex CLI", home: path.join(HOME, ".codex"), dir: path.join(HOME, ".agents", "skills") },
 ];
 
 // Files we never overwrite once a user has run the skill and built up state.
@@ -45,7 +47,7 @@ function copyDir(src, dest, skillsDir) {
 // machine (its home dir already exists) — never litter a fresh ~/.codex or
 // ~/.claude onto a machine that doesn't have the tool. If neither is present
 // yet, default to Claude Code, since that's this package's primary target.
-let targets = TARGETS.filter((t) => fs.existsSync(path.dirname(t.dir)));
+let targets = TARGETS.filter((t) => fs.existsSync(t.home));
 if (targets.length === 0) targets = [TARGETS[0]];
 
 for (const { tool, dir } of targets) {
