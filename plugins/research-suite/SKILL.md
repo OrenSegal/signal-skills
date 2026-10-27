@@ -14,7 +14,7 @@ to figure out which one to reach for.
 `signal-report` here is a **local render/report-generation skill**. It
 owns the canonical `render_report.py`/`template.html` that the other
 three skills ship generated copies of. It was called `signal-scout`
-before plugin version 2.0.0 and was renamed so it no longer collides with Oren's
+before plugin version 2.0.0 and is distinct from Oren's
 separate `signal-scout` customer-discovery product
 (https://github.com/OrenSegal/signal-scout), which is a different tool.
 

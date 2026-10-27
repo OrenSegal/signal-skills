@@ -422,7 +422,7 @@ content:
   instead of a separate ignored section.
 - episode + date per finding, always, in each item's `source` field.
 
-What the script enforces for you (previously manual, now mechanical):
+What the script enforces for you:
 - **No em dashes anywhere in the copy** — `render_report.py` scans every
   text field and refuses to render (with the exact field named) if it
   finds one. You'll get a hard error, not a missed review pass.
@@ -430,9 +430,8 @@ What the script enforces for you (previously manual, now mechanical):
   required per item, so there's no path to omitting the tag.
 - **Theme tokens can't be corrupted** — the script only ever substitutes
   the title into the CSS head; it never touches the `:root` /
-  `:root[data-theme]` / media-query blocks. The dark/light-inversion bug
-  from a prior version of this template is now structurally impossible
-  through this path.
+  `:root[data-theme]` / media-query blocks. A dark/light token inversion
+  cannot happen through this path.
 
 What still needs a real decision (the script can't do this for you):
 - **Palette grounding.** `template.html`'s default (dark panel, sans
@@ -440,7 +439,7 @@ What still needs a real decision (the script can't do this for you):
   not a mandatory look. If the show/episode's subject calls for something
   else, edit the CSS variables directly before running the script for that
   mining run, rather than defaulting to warm-cream+serif+terracotta (the
-  AI-cliché the prior version shipped once).
+  AI-cliché default).
 - Load `artifact-design` before publishing — still required by the
   `Artifact` tool itself.
 
