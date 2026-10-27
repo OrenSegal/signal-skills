@@ -76,7 +76,7 @@ git clone https://github.com/OrenSegal/signal-skills /tmp/signal-skills
 cp -r /tmp/signal-skills/plugins/{podcast,review-scout,ideation,signal-report,research-suite,signal-outreach} ~/.codex/skills/
 ```
 
-Codex reads global skills from `~/.codex/skills/<name>/SKILL.md` (see [developers.openai.com/codex/skills](https://developers.openai.com/codex/skills)). The npx installer below also detects `~/.codex` and writes there.
+Codex reads global skills from `~/.codex/skills/<name>/SKILL.md` (see [developers.openai.com/codex/skills](https://developers.openai.com/codex/skills)). The installer script below also detects `~/.codex` and writes there.
 
 ### skills.sh
 
@@ -84,10 +84,13 @@ Codex reads global skills from `~/.codex/skills/<name>/SKILL.md` (see [developer
 npx skills add OrenSegal/signal-skills
 ```
 
-### npm / npx
+### Installer script
+
+The package is not published to npm, so `npx signal-skills` does not work. Run the installer from a clone with Node:
 
 ```
-npx signal-skills
+git clone https://github.com/OrenSegal/signal-skills /tmp/signal-skills
+node /tmp/signal-skills/bin/install.js
 ```
 
 The installer checks which of `~/.claude` and `~/.codex` exist and copies all six skills into each one it finds. If neither exists yet, it falls back to `~/.claude/skills`. Re-running is safe: it never overwrites a `config.json` you've customized.
@@ -115,7 +118,7 @@ plugins/signal-report/    shared report renderer (SKILL.md, render_report.py, te
 plugins/research-suite/   router/map skill for the mining/ideation/reporting skills (SKILL.md)
 plugins/signal-outreach/  turn a signal-scout report into outreach/briefs/pitches (SKILL.md, scripts/generate_outreach.py, examples/)
 .claude-plugin/marketplace.json   marketplace manifest for all six Claude Code plugins
-bin/install.js            npx entry point, installs into Claude Code and/or Codex CLI
+bin/install.js            installer script, installs into Claude Code and/or Codex CLI
 ```
 
 ## Development
