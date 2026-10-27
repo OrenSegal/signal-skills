@@ -13,9 +13,8 @@ work instead of a cutoff.
 Called from another skill's own report step, once that skill has already:
 extracted findings, tagged confidence per finding (measured / anecdotal /
 speculative, confirmed-once / confirmed-twice / unresolved), and decided
-what's in scope for the user's actual query. (`podcast` used to delegate
-its Step 5 here; it now owns its own copy of this template in-house so it
-can run standalone. This skill remains available for any other source type
+what's in scope for the user's actual query. (`podcast` owns its own
+copy of this template so it can run standalone. This skill remains available for any other source type
 — competitor audits, doc sweeps — that wants the same report shape without
 duplicating the template.)
 
@@ -72,18 +71,15 @@ python3 ~/.claude/skills/signal-report/render_report.py payload.json out.html ou
 4. **Confidence is visible, not just implied.** `tag` and `tag_class` are
    required fields per item in the payload; the script errors if either is
    missing, so there's no path to an untagged finding.
-5. **Contrast is theme-aware, correctly, every time.** This used to be a
-   manual copy-the-template discipline (a prior version of this skill
-   inverted a dark/light token block and shipped light text on a light
-   card). `render_report.py` now makes it structural: the script only ever
-   substitutes the title into the head, and never touches the `:root` /
-   `:root[data-theme]` / media-query blocks, so that class of bug can't
-   recur through this path.
-6. **Don't default to the AI-cliché look.** A prior version of this skill
-   shipped warm-cream background + serif headline + terracotta accent,
-   unexamined — the exact combination `artifact-design` calls out as a
-   generic default, and a user flagged it as slop on sight. This is the one
-   rule the script can't enforce: if the report's subject calls for a
+5. **Contrast is theme-aware, correctly, every time.** `render_report.py`
+   makes it structural: the script only ever substitutes the title into the
+   head, and never touches the `:root` / `:root[data-theme]` / media-query
+   blocks, so an inverted dark/light token block (light text on a light
+   card) can't come through this path.
+6. **Don't default to the AI-cliché look.** Warm-cream background + serif
+   headline + terracotta accent is the exact combination `artifact-design`
+   calls out as a generic default, and it reads as slop on sight. This is
+   the one rule the script can't enforce: if the report's subject calls for a
    different palette than `template.html`'s default (dark "signal
    intercept" panel, sans display, monospace data, signal-strength bars),
    edit the CSS variables in `template.html` directly before that run.

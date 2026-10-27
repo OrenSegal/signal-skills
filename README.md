@@ -29,7 +29,7 @@ Both tools read the same folder shape (`SKILL.md` plus scripts), just from diffe
 
 **`signal-outreach`** picks the next action for each prospect type in a `signal-scout` prospect report: outreach sequences for Individuals, content/GTM briefs for Segments, BD pitches for Companies. It never sends anything automatically.
 
-**Renamed:** `signal-report` was called `signal-scout` before plugin version 2.0.0. It was renamed so it no longer collides with the separate [signal-scout](https://github.com/OrenSegal/signal-scout) prospect-finding product (same author, different tool). If you installed the old name, remove `~/.claude/skills/signal-scout` (or `/plugin uninstall signal-scout@oren-signal-skills`) unless that folder holds the signal-scout product.
+**Naming:** `signal-report` was called `signal-scout` before plugin version 2.0.0. It is distinct from the separate [signal-scout](https://github.com/OrenSegal/signal-scout) prospect-finding product (same author, different tool). If you installed the old name, remove `~/.claude/skills/signal-scout` (or `/plugin uninstall signal-scout@oren-signal-skills`) unless that folder holds the signal-scout product.
 
 ## Beyond a one-shot summary
 
