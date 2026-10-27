@@ -16,8 +16,8 @@ follows [Keep a Changelog](https://keepachangelog.com/).
   References to the signal-scout product (the input to `signal-outreach`)
   are unchanged.
 - Ported the rest of `signal-outreach` from
-  [first-to-first-sale](https://github.com/OrenSegal/first-to-first-sale),
-  which is now archived: `plugins/signal-outreach/examples/` (an example
+  the `OrenSegal/first-to-first-sale` repo, which is now private and
+  archived: `plugins/signal-outreach/examples/` (an example
   `outreach-package.json` and its rendered report) and
   `tests/test_signal_outreach.py`. The skill files were already identical.
   The test also checks that the checked-in example report matches what
