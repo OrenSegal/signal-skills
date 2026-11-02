@@ -5,6 +5,7 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+- Fixed: `plugins/podcast/resolve.py` fetched feed and transcript URLs with a bare `urlopen`, so a hostile feed could read local files or internal addresses into `--download`. Only http and https on public addresses are fetched now, also after a redirect. A feed on your own localhost is refused too.
 - Renamed the report-rendering skill `signal-scout` to `signal-report`
   (plugin version 2.0.0) so it no longer collides with the separate
   [signal-scout](https://github.com/OrenSegal/signal-scout) prospect-finding
