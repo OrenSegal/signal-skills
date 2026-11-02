@@ -3,7 +3,7 @@
 All notable changes to this repository are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/).
 
-## Unreleased
+## 1.0.2 (2026-11-02)
 
 - Fixed: `plugins/podcast/resolve.py` fetched feed and transcript URLs with a bare `urlopen`, so a hostile feed could read local files or internal addresses into `--download`. Only http and https on public addresses are fetched now, also after a redirect. A feed on your own localhost is refused too.
 - Renamed the report-rendering skill `signal-scout` to `signal-report`
