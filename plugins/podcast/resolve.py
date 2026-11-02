@@ -20,15 +20,95 @@ manual subs if present). No podcast:transcript tag equivalent exists, so
 `have` transcript count reflects whichever videos actually have an en/en-orig
 caption track — some videos (esp. very new ones) may have none yet.
 """
-import json, re, sys, os, subprocess, urllib.request, urllib.parse
+import ipaddress, json, re, socket, sys, os, subprocess, urllib.request, urllib.parse
 import xml.etree.ElementTree as ET
 
 PNS = {"podcast": "https://podcastindex.org/namespace/1.0"}
 UA = {"User-Agent": "Mozilla/5.0 (compatible; podcast-skill/1.0)"}
 
 
+class BlockedURL(Exception):
+    """A URL or address this script refuses to contact."""
+
+
+# Explicit lists rather than ipaddress.is_global, whose answers have shifted
+# between Python releases. Same lists as cited's safe_fetch.py.
+_BLOCKED_V4 = tuple(ipaddress.ip_network(n) for n in (
+    "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16",
+    "172.16.0.0/12", "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "192.168.0.0/16",
+    "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "224.0.0.0/4", "240.0.0.0/4",
+))
+_BLOCKED_V6 = tuple(ipaddress.ip_network(n) for n in (
+    "::/96", "64:ff9b:1::/48", "100::/64", "2001::/23", "2001:db8::/32", "2002::/16",
+    "3fff::/20", "5f00::/16", "fc00::/7", "fe80::/10", "fec0::/10", "ff00::/8",
+))
+_NAT64 = ipaddress.ip_network("64:ff9b::/96")
+
+
+def is_blocked_ip(ip):
+    """True if `ip` is not a public unicast address."""
+    if ip.version == 6:
+        if ip.ipv4_mapped is not None:
+            return is_blocked_ip(ip.ipv4_mapped)
+        if ip in _NAT64:  # DNS64 synthesizes these for public IPv4 sites; judge the embedded v4
+            return is_blocked_ip(ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF))
+        return any(ip in net for net in _BLOCKED_V6)
+    return any(ip in net for net in _BLOCKED_V4)
+
+
+def _is_noncanonical_numeric_host(host):
+    """2130706433, 0x7f000001, 0177.0.0.1, 127.1: inet_aton accepts these, a dotted quad aside."""
+    if not re.fullmatch(r"[0-9a-fx.]+", host) or not re.search(r"\d", host):
+        return False
+    try:
+        ipaddress.ip_address(host)
+        return False
+    except ValueError:
+        pass
+    try:
+        socket.inet_aton(host)
+    except OSError:
+        return False
+    return True
+
+
+def check_url(url):
+    """Raise BlockedURL unless `url` is http(s) on a host with only public addresses.
+
+    Feed URLs come from the user or iTunes and transcript URLs from the feed, so
+    a hostile feed could otherwise read local files or internal services into
+    --download."""
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme.lower() not in ("http", "https"):
+        raise BlockedURL(f"URL scheme {parts.scheme or '(none)'} is not allowed: {url}")
+    if not parts.hostname:
+        raise BlockedURL(f"URL has no host: {url}")
+    # Resolvers disagree on these (0177.0.0.1 is loopback on Linux, not on macOS), so don't ask one.
+    if _is_noncanonical_numeric_host(parts.hostname):
+        raise BlockedURL(f"host {parts.hostname} is a non-canonical numeric address")
+    try:
+        infos = socket.getaddrinfo(parts.hostname, parts.port or 443, 0, socket.SOCK_STREAM)
+    except socket.gaierror:
+        return  # the fetch reports it, or a proxy resolves it for us
+    for info in infos:
+        if is_blocked_ip(ipaddress.ip_address(str(info[4][0]).split("%", 1)[0])):
+            raise BlockedURL(f"{parts.hostname} resolves to non-public address {info[4][0]}")
+
+
+class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_CheckedRedirects)
+
+
 def get(url, timeout=60):
-    return urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout).read()
+    # shortcut: checks the address before connecting, so a DNS answer that changes
+    # between check and connect gets through; upgrade to cited's connect-time guard if this runs server-side.
+    check_url(url)
+    return _OPENER.open(urllib.request.Request(url, headers=UA), timeout=timeout).read()
 
 
 def itunes(params):
@@ -230,7 +310,10 @@ def main():
     if ep_id:
         print(f"episode i={ep_id} -> {target or 'UNRESOLVED (falling back to newest)'}")
 
-    eps = parse_feed(get(feed), limit)
+    try:
+        eps = parse_feed(get(feed), limit)
+    except BlockedURL as ex:
+        sys.exit(f"Refused to fetch the feed: {ex}")
     have = sum(1 for e in eps if e["transcript"])
     print(f"episodes: {len(eps)} shown, {have} with embedded transcripts\n")
     for i, e in enumerate(eps):
