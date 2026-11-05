@@ -194,7 +194,7 @@ def cmd_scoreboard(args):
     from the rate, since they haven't actually been tested yet."""
     buckets = {}
     for show in _iter_shows():
-        for ep, data in show["episodes"].items():
+        for _ep, data in show["episodes"].items():
             for p in data.get("predictions", []):
                 key = (p.get("speaker") or "(unattributed)") if args.by_guest else show["show"]
                 b = buckets.setdefault(key, {"confirmed": 0, "failed": 0, "stale": 0, "open": 0})

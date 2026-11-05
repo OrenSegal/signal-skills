@@ -1,4 +1,7 @@
-# Skill: signal-outreach
+---
+name: signal-outreach
+description: Turn a signal-scout prospect report into the right next action per prospect type — outreach sequences for Individuals, content/GTM briefs for Segments, BD pitch one-pagers for Companies. Use after signal-scout produces its report, or when you already have a qualified prospect list. Never sends anything automatically.
+---
 
 # Signal Outreach
 

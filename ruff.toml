@@ -1,0 +1,7 @@
+target-version = "py310"
+line-length = 140
+
+[lint]
+select = ["E", "F", "W", "I", "B"]
+# E501: long prose/f-string template lines in generate_outreach.py and test fixtures; E741: `l` loop vars in podcast/resolve.py. Not trivial to fix without reflowing code.
+ignore = ["E501", "E741"]
