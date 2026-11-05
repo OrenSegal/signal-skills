@@ -20,7 +20,15 @@ manual subs if present). No podcast:transcript tag equivalent exists, so
 `have` transcript count reflects whichever videos actually have an en/en-orig
 caption track — some videos (esp. very new ones) may have none yet.
 """
-import ipaddress, json, re, socket, sys, os, subprocess, urllib.request, urllib.parse
+import ipaddress
+import json
+import os
+import re
+import socket
+import subprocess
+import sys
+import urllib.parse
+import urllib.request
 import xml.etree.ElementTree as ET
 
 PNS = {"podcast": "https://podcastindex.org/namespace/1.0"}
@@ -231,7 +239,6 @@ def resolve_source(src):
         # Spotify or bare name -> search iTunes by name
         name = src
         if "spotify.com" in src:
-            slug = re.search(r"/show/[^/?]+", src)
             print("! Spotify has no open API; searching iTunes by name instead.", file=sys.stderr)
             name = input("Show name: ") if sys.stdin.isatty() else src
         q = urllib.parse.urlencode({"term": name, "entity": "podcast", "limit": 5})
