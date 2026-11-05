@@ -27,7 +27,7 @@ ROOT = Path(__file__).parent
 LEDGER = ROOT / "ledger.py"
 
 sys.path.insert(0, str(ROOT))
-from render_report import render_to, PayloadError  # noqa: E402
+from render_report import PayloadError, render_to  # noqa: E402
 
 TIER_BANDS = [
     # (floor, name, label, color)
@@ -105,7 +105,7 @@ def build_payload(by_guest, min_tested):
     return {
         "title": f"Prediction Scoreboard: {scope} graded on their own calls",
         "eyebrow": f"{sum(len(t['items']) for t in payload_tiers)} {scope} tracked",
-        "headline": f"Who's actually been right, graded against their own predictions",
+        "headline": "Who's actually been right, graded against their own predictions",
         "query": f"Every {scope[:-1]} with a tracked prediction, ranked by confirmed hit rate, not by follower count or vibes.",
         "tiers": payload_tiers,
         "footer_left": str(ROOT / "state"),

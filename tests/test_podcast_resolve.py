@@ -77,7 +77,8 @@ class FlattenTranscript(unittest.TestCase):
 
     def test_dedups_repeated_lines(self):
         vtt = "WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nSame line\n\n00:00:01.000 --> 00:00:02.000\nSame line\n"
-        import tempfile, os
+        import os
+        import tempfile
         with tempfile.NamedTemporaryFile(suffix=".vtt", mode="w", delete=False) as f:
             f.write(vtt)
             path = f.name
