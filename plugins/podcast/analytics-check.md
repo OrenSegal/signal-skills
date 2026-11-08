@@ -120,7 +120,7 @@ checked and what came back, its `source` field should carry both
 citations (episode + analytics platform), e.g.:
 
 ```
-"source": "Mobile Growth Weekly ep 214 (2026-06-30); cross-checked against
-PostHog funnel data, Shelfie project, 2026-06-01..07-01: observed 58%
-completion vs. claimed 65-70%, contradicted"
+"source": "<show> ep 214 (2026-06-30); cross-checked against
+PostHog funnel data, <your project>, 2026-06-01..07-01: observed 58%
+completion vs. claimed 65-70%, contradicted" (illustrative values)
 ```

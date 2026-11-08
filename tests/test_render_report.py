@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -140,6 +141,15 @@ class RenderText(unittest.TestCase):
         payload = make_payload(footer_left="", footer_right="")
         text = rr.render_text(payload)
         self.assertNotIn("---", text)
+
+
+
+class CommittedExample(unittest.TestCase):
+    def test_example_report_matches_renderer(self):
+        # The checked-in example must match what the renderer produces today, so it cannot go stale.
+        examples = Path(rr.__file__).parent / "examples"
+        payload = json.loads((examples / "payload.json").read_text())
+        self.assertEqual(rr.render_to(payload, Path("report.html")), (examples / "report.html").read_text())
 
 
 if __name__ == "__main__":

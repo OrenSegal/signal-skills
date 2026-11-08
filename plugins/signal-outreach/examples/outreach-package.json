@@ -1,15 +1,15 @@
 {
-  "product": "Shelfie",
+  "product": "PantryCam (fictional)",
   "generated_at": "2026-07-14",
   "channel_breakdown": {
     "community": 2,
     "youtube": 1,
     "email": 1,
-    "linkedin": 1
+    "partnerships page": 1
   },
   "sequences": [
     {
-      "prospect_name": "MealPrepWeekly",
+      "prospect_name": "Example meal-prep YouTube channel (fictional)",
       "prospect_score": 97,
       "primary_channel": "YouTube reply",
       "backup_channel": "Email",
@@ -38,7 +38,7 @@
           "day": 7,
           "channel": "YouTube comment (reply to own)",
           "subject": null,
-          "body": "Found this — a creator with a similar setup switched to camera-based tracking and cut their waste by 60% in a month. Thought you'd find the comparison interesting: [link]. No pitch, just data.",
+          "body": "Found this write-up comparing camera-based and manual pantry tracking. Thought you'd find the comparison interesting: [link]. No pitch.",
           "variant": null,
           "personalization_notes": "Pure value-add. Social proof from a similar creator. No ask."
         },
@@ -59,7 +59,7 @@
       }
     },
     {
-      "prospect_name": "The Frugal Kitchen (Reddit user)",
+      "prospect_name": "Example Reddit poster (fictional)",
       "prospect_score": 95,
       "primary_channel": "Reddit reply",
       "backup_channel": "Email",
@@ -70,7 +70,7 @@
           "day": 0,
           "channel": "Reddit comment",
           "subject": null,
-          "body": "The $60/week waste number is wild — and unfortunately common. We built Shelfie specifically for this: scan your fridge, get recipes matched to what's actually there before it goes bad. It tracks expiry by sight. Would love your take on whether it fits your workflow.",
+          "body": "The $60/week waste number is wild — and unfortunately common. We built PantryCam specifically for this: scan your fridge, get recipes matched to what's actually there before it goes bad. It tracks expiry by sight. Would love your take on whether it fits your workflow.",
           "variant": "B",
           "personalization_notes": "References their specific waste dollar amount from the post. Asks for their opinion, not a purchase."
         },
@@ -79,7 +79,7 @@
           "day": 3,
           "channel": "Reddit comment (reply to own)",
           "subject": null,
-          "body": "Saw some people in the thread suggesting spreadsheets — those work until you forget to update them. Shelfie updates by camera scan so the data stays current without manual effort. Happy to set you up with a free account.",
+          "body": "Saw some people in the thread suggesting spreadsheets — those work until you forget to update them. PantryCam updates by camera scan so the data stays current without manual effort. Happy to set you up with a free account.",
           "variant": null,
           "personalization_notes": "Addresses the spreadsheet workaround others suggested. Positions camera scan as the fix."
         },
@@ -109,7 +109,7 @@
       }
     },
     {
-      "prospect_name": "Zero Waste Chef (blog)",
+      "prospect_name": "Example food-waste blog (fictional)",
       "prospect_score": 79,
       "primary_channel": "Email",
       "backup_channel": "Blog comment",
@@ -120,7 +120,7 @@
           "day": 0,
           "channel": "Email",
           "subject": "Your food waste app post resonated",
-          "body": "Read your post on deleting food waste apps — the manual-entry frustration is exactly why we built Shelfie to work by camera scan. No typing, just point your phone at the fridge. The recipe matching uses what's actually there. Would love your honest take on whether it solves the gaps you outlined.",
+          "body": "Read your post on deleting food waste apps — the manual-entry frustration is exactly why we built PantryCam to work by camera scan. No typing, just point your phone at the fridge. The recipe matching uses what's actually there. Would love your honest take on whether it solves the gaps you outlined.",
           "variant": "B",
           "personalization_notes": "References the specific blog post. Positions as seeking honest feedback, not endorsement."
         },
@@ -129,7 +129,7 @@
           "day": 5,
           "channel": "Email",
           "subject": "Re: Your food waste app post resonated",
-          "body": "Quick follow-up — we read your critique of the 'smart suggestions' in existing apps. Shelfie's recipe engine scores by ingredient freshness and expiry urgency, not just preference. Different approach entirely. Happy to demo.",
+          "body": "Quick follow-up — we read your critique of the 'smart suggestions' in existing apps. PantryCam's recipe engine scores by ingredient freshness and expiry urgency, not just preference. Different approach entirely. Happy to demo.",
           "variant": null,
           "personalization_notes": "Addresses a specific critique from the blog post. Shows we actually read it."
         },
@@ -155,7 +155,7 @@
       "response_handling": {
         "positive_reply": "Send a free account. Ask: 'What would you need to see to write an honest review?' Give them full control of the narrative.",
         "question_reply": "If 'is this another app that doesn't work?': 'Fair concern. Here's a 60-second video of the actual scan flow — no marketing, just the product. Judge for yourself.' If 'how is this different?': 'Camera scan, not manual entry. Recipe engine scores by freshness urgency, not just taste preference.'",
-        "no_reply_after_sequence": "Respect their time. If they publish about Shelfie (positive or negative), engage genuinely. Do not ask for removal of negative coverage."
+        "no_reply_after_sequence": "Respect their time. If they publish about PantryCam (positive or negative), engage genuinely. Do not ask for removal of negative coverage."
       }
     }
   ],
@@ -187,14 +187,14 @@
   ],
   "company_pitches": [
     {
-      "company_name": "GreenPlate Co",
+      "company_name": "Example restaurant group (fictional)",
       "company_score": 84,
       "role": "Potential customer account",
-      "pitch": "Saw the Sustainability Ops Lead role — the 40% waste reduction target is exactly the outcome our AI pantry intelligence engine (scan, predict spoilage, suggest utilization) is built for. It runs in home kitchens today; the same detection layer could pilot across your 3 locations. Open to a scoped 30-day pilot at one location, measured against that target?",
-      "execution_path": "Warm BD — the hiring manager for this role is named on the job posting's company page.",
-      "contact_path": "LinkedIn message to the hiring manager listed on the job posting",
-      "fallback_ask": "If a pilot isn't the right first step, offer to share the 70% manual-audit-time reduction data from prior pilots as a lower-commitment follow-up."
+      "pitch": "Saw the Sustainability Ops Lead role — the 40% waste reduction target is exactly the outcome our AI pantry intelligence engine (scan, predict spoilage, suggest utilization) is built for. It is built for home kitchens; the same detection layer could pilot across your 3 locations. Open to a scoped 30-day pilot at one location, measured against that target?",
+      "execution_path": "Warm BD through the company's public partnerships page.",
+      "contact_path": "Public partnerships or contact form on the company website",
+      "fallback_ask": "If a pilot isn't the right first step, offer a 20-minute walkthrough of the scan flow as a lower-commitment follow-up."
     }
   ],
-  "general_notes": "These are drafts. Every message must be reviewed and personalized further before sending. The signal-outreach skill should be re-run against any new signals discovered during research. Never send any message without explicit human approval."
+  "general_notes": "Hand-written example, not produced by a run: the product, prospects and numbers are fictional. These are drafts. Every message must be reviewed and personalized further before sending. The signal-outreach skill should be re-run against any new signals discovered during research. Never send any message without explicit human approval."
 }
