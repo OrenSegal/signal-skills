@@ -1,6 +1,9 @@
 ---
 name: signal-report
 description: Turn a pile of ranked research findings (from podcast mining, competitor audits, doc sweeps, whatever) into one prioritized Artifact report. Use as the reporting stage of any skill that has already done the extraction and just needs to present it as a shareable, ranked, reasoned page. Not a research method itself, and not a curation step.
+metadata:
+  openclaw:
+    homepage: https://github.com/OrenSegal/signal-skills
 ---
 
 Render everything relevant, ranked, with reasoning. Don't curate down to a
