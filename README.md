@@ -19,7 +19,7 @@ Both tools read the same folder shape (`SKILL.md` plus scripts), just from diffe
 
 **`podcast`** resolves a podcast URL to its feed or transcripts and mines episodes for ideas without dumping raw transcript into context. It tracks falsifiable predictions across episodes, dedups claims that show up on several shows, and answers questions straight out of the corpus you've built up.
 
-**`review-scout`** applies the same extract-don't-summarize approach to user reviews. It only uses compliant, ToS-safe sources (Apple's public RSS feed and Google's official Play Developer API), and says so explicitly wherever no compliant path exists.
+**`review-scout`** applies the same extract-don't-summarize approach to user reviews. It reads only Apple's public RSS feed and Google's official Play Developer API (your own app only), and says so wherever neither applies.
 
 **`ideation`** goes one step past a finding: it turns findings into prioritized, cited proposals. A ledger keeps it from re-proposing the same idea on every run.
 
@@ -41,9 +41,26 @@ Each mining run writes to a per-show or per-app ledger (`ledger.py`), so results
 - **Web cross-checks.** Key claims and open predictions can be checked against independent sources on the open web (Claude Code's `WebSearch`). A confirmed prediction then carries a real citation, not just "a later episode agreed."
 - **Regression detection.** `review-scout` flags a complaint whose wording overlaps with something already marked fixed in an earlier app version.
 - **From findings to decisions.** `ideation` reads both mining skills' ledgers and proposes what to build, fix, or test next, citing the findings behind each proposal.
-- **Token use.** Extraction is batched by transcript word count and runs on a cheap, fast model. Only synthesis, contradiction-spotting, and web-check judgment calls use the full session model. A deterministic script generates the report HTML, so the markup costs no tokens.
+- **Token use.** `podcast`'s SKILL.md tells the agent to batch extraction by transcript word count and run it on a cheaper model (such as Haiku), keeping synthesis and web-check judgment on the session model. Token use has not been measured. A deterministic script generates the report HTML, so the markup costs no tokens.
 
 Each skill's `SKILL.md` is the spec the skill actually runs on and has the full details. For a short guide to picking one, read `plugins/research-suite/SKILL.md`.
+
+## Example output
+
+Both committed examples are hand-written inputs run through the real renderers, not output from a skill run. A test re-renders each one and fails if the checked-in HTML is stale.
+
+- `signal-report`: [`plugins/signal-report/examples/payload.json`](plugins/signal-report/examples/payload.json) rendered to [`report.html`](plugins/signal-report/examples/report.html).
+- `signal-outreach`: [`plugins/signal-outreach/examples/outreach-package.json`](plugins/signal-outreach/examples/outreach-package.json) rendered to [`outreach-report.html`](plugins/signal-outreach/examples/outreach-report.html). The product, prospects and numbers are fictional.
+
+`podcast`, `review-scout` and `ideation` have no committed output from a real run.
+
+## Limitations
+
+- **The LLM steps are untested.** The 79 unittest cases cover ledgers, URL resolvers, dedup and scoreboard math, and the two renderers. What a skill extracts, ranks or proposes has no automated check and no measured quality.
+- **No real-run examples.** See above; the examples show the renderers, not the mining.
+- **Narrow review coverage.** Android reviews need a service account and work only for an app you own.
+
+The design decisions and rejected alternatives are in [`docs/decisions.md`](docs/decisions.md).
 
 ## Requirements
 
