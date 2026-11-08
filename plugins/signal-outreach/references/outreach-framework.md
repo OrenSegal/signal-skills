@@ -229,7 +229,7 @@ A Company is evaluated as an org-level account or partner, not an individual to 
 
 ### Combined value proposition
 
-State plainly what the partnership unlocks that neither side has alone — not "synergies," but the specific gap it closes (e.g., "our pantry-recognition layer plus their existing coaching loop closes the one input that's still manual today").
+State plainly what the partnership unlocks that neither side has alone — not "synergies," but the specific gap it closes (e.g., "our booking calendar plus their existing parts-ordering flow closes the one step that's still a phone call today").
 
 ### Naming the execution path honestly
 
