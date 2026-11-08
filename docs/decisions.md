@@ -10,7 +10,7 @@ Three decisions behind the repo's shape. Where the reasoning was not written dow
 
 **Alternatives considered.** A symlink or a cross-plugin import: rejected because it resolves to nothing after a single-plugin install (the script header says this broke once; the breaking commit is not recorded). A shared pip package: rejected to keep the plugins stdlib only (CONTRIBUTING.md).
 
-**Consequences.** Three duplicate files per change, and contributors must remember to run the script; CI catches it if they don't.
+**Consequences.** There are 6 copies in total (2 files × 3 consumers), and each edit to a source file regenerates its 3 copies. Contributors must remember to run the script; CI catches it if they don't.
 
 **Evidence.** 46d4834 (script), `.github/workflows/check-shared-files.yml` (`drift` job).
 
