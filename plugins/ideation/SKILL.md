@@ -1,6 +1,11 @@
 ---
 name: ideation
 description: Turn findings already mined by podcast/review-scout into prioritized "build/test next" proposals, each citing the specific finding(s) that motivated it. Use when the user asks "what should we build next", "what's worth prioritizing", or wants a synthesis across research + reviews instead of another raw findings dump.
+metadata:
+  openclaw:
+    homepage: https://github.com/OrenSegal/signal-skills
+    requires:
+      bins: [python3]
 ---
 
 Findings are not decisions. `podcast` and `review-scout` each produce ranked

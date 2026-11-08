@@ -1,6 +1,11 @@
 ---
 name: review-scout
 description: Mine user reviews for whatever kind of product this repo actually is (mobile app, browser extension, web/SaaS) and turn them into ranked findings — pain points, regressions, feature-request clusters, praise worth keeping. Use when the user asks what reviews/feedback say, wants a release-quality check against real user complaints, or asks "what are people saying about the app."
+metadata:
+  openclaw:
+    homepage: https://github.com/OrenSegal/signal-skills
+    requires:
+      bins: [python3]
 ---
 
 Turn scattered star ratings and free-text reviews into extracted, ranked

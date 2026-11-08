@@ -1,6 +1,11 @@
 ---
 name: podcast
 description: Pull podcast transcripts on demand and mine them for ideas, trends, and mechanics — without dumping raw transcript into context. Use when the user shares a podcast/episode URL, names a show, or asks what's worth taking from an episode/series. Handles Apple Podcasts, Spotify, YouTube, and RSS feeds.
+metadata:
+  openclaw:
+    homepage: https://github.com/OrenSegal/signal-skills
+    requires:
+      bins: [python3]
 ---
 
 Turn podcasts into extracted findings. The whole point is that raw

@@ -2,6 +2,9 @@
 name: research-suite
 description: Router and map for the podcast/review-scout/ideation/signal-report skill family — explains what each skill does, when to reach for which one, and how the shared infra (render_report.py, template.html, analytics-check.md, per-skill ledgers) fits together. User-invoked only; never fires automatically.
 disable-model-invocation: true
+metadata:
+  openclaw:
+    homepage: https://github.com/OrenSegal/signal-skills
 ---
 
 Four skills, one shared rendering/analytics spine, each with its own
