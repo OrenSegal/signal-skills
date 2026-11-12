@@ -8,6 +8,8 @@ metadata:
       bins: [python3]
 ---
 
+**Paths.** `SKILL_DIR` in the commands below is the folder that holds this file and its scripts. On Claude Code it is `${CLAUDE_SKILL_DIR}`. If that still reads as a variable name, your host does not fill it in: use the folder this file was loaded from (for Codex, `~/.agents/skills/ideation`). Put the real path in place of `SKILL_DIR` when you run a command.
+
 Findings are not decisions. `podcast` and `review-scout` each produce ranked
 findings; this skill is the one step further — turning "23 reviews complain
 about slow checkout" into "ship a one-tap checkout retry, here's why, here's
@@ -17,8 +19,8 @@ citation is a guess wearing a findings hat — don't generate those.
 ## Step 0 — Check the ledger before proposing
 
 ```bash
-python3 ~/.claude/skills/ideation/ledger.py list --status proposed
-python3 ~/.claude/skills/ideation/ledger.py list --status shipped
+python3 SKILL_DIR/ledger.py list --status proposed
+python3 SKILL_DIR/ledger.py list --status shipped
 ```
 
 Don't re-propose something already `proposed` (still pending a decision),
@@ -31,10 +33,15 @@ strengthen the case.
 Read the other skills' state directly, don't re-derive from scratch:
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py known-issues 2>/dev/null
-python3 ~/.claude/skills/review-scout/ledger.py known-issues 2>/dev/null
-python3 ~/.claude/skills/review-scout/ledger.py dedup --threshold 0.5 2>/dev/null
+python3 SKILL_DIR/../podcast/ledger.py known-issues 2>/dev/null
+python3 SKILL_DIR/../review-scout/ledger.py known-issues 2>/dev/null
+python3 SKILL_DIR/../review-scout/ledger.py dedup --threshold 0.5 2>/dev/null
 ```
+
+`SKILL_DIR/../podcast` is where a skills-folder install puts the sibling
+skill. A plugin install puts each skill in its own versioned folder, so the
+sibling is `SKILL_DIR/../../podcast/<version>/` there. A skill that is not
+installed has no findings to read; skip it.
 
 If the user already has a specific rendered report (podcast/review-scout
 output) in this conversation, use that directly instead of re-querying the
@@ -57,7 +64,7 @@ For each build/test candidate, work out:
 Record each as you go:
 
 ```bash
-python3 ~/.claude/skills/ideation/ledger.py propose --title "<short title>" \
+python3 SKILL_DIR/ledger.py propose --title "<short title>" \
   --citations-json '["23 reviews cite slow checkout, v2.4-2.6 (review-scout)", "..."]' \
   --note "<effort/confidence/kill-condition, one line each>"
 ```
@@ -78,7 +85,7 @@ gap)", "Needs more data before deciding", "Parked (rejected once, revisit
 if new evidence)".
 
 ```bash
-python3 ~/.claude/skills/ideation/render_report.py payload.json out.html
+python3 SKILL_DIR/render_report.py payload.json out.html
 ```
 
 Publish with `Artifact` on Claude Code; elsewhere use `--open` or report
@@ -88,7 +95,7 @@ For a paste-into-a-ticket/prompt form of the same proposals, add a `.md`
 target in the same invocation:
 
 ```bash
-python3 ~/.claude/skills/ideation/render_report.py payload.json out.html out.md
+python3 SKILL_DIR/render_report.py payload.json out.html out.md
 ```
 
 ## Step 5 — After the user decides
@@ -96,14 +103,14 @@ python3 ~/.claude/skills/ideation/render_report.py payload.json out.html out.md
 Update status so the next run doesn't re-propose it:
 
 ```bash
-python3 ~/.claude/skills/ideation/ledger.py set-status --title "<title>" --status shipped
-python3 ~/.claude/skills/ideation/ledger.py set-status --title "<title>" --status rejected
-python3 ~/.claude/skills/ideation/ledger.py set-status --title "<title>" --status parked
+python3 SKILL_DIR/ledger.py set-status --title "<title>" --status shipped
+python3 SKILL_DIR/ledger.py set-status --title "<title>" --status rejected
+python3 SKILL_DIR/ledger.py set-status --title "<title>" --status parked
 ```
 
 ## Hygiene
 
-- State lives in `~/.claude/skills/ideation/config.json` and
+- State lives in `~/.signal-skills/ideation/config.json` and
   `state/ideas.json` — a real copy of the ledger pattern, deliberately NOT
   symlinked to podcast's or review-scout's ledger.py (same
   `Path(__file__).resolve()`-follows-symlinks state-isolation bug that

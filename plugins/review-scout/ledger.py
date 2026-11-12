@@ -17,18 +17,47 @@ orchestrating agent shells out to; AskUserQuestion / Artifact stay in
 SKILL.md.
 
 Layout:
-  ~/.claude/skills/review-scout/config.json       — persisted preferences
-  ~/.claude/skills/review-scout/state/<slug>.json — one file per app
+  ~/.signal-skills/review-scout/config.json       — persisted preferences
+  ~/.signal-skills/review-scout/state/<slug>.json — one file per app
 """
 import argparse
 import datetime
 import json
+import os
 import re
+import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-CONFIG_PATH = ROOT / "config.json"
-STATE_DIR = ROOT / "state"
+SKILL = "review-scout"
+# State lives outside the install folder: a plugin update installs into a new
+# versioned folder, and Claude Code and Codex install into different homes.
+DATA_DIR = Path(os.environ.get("SIGNAL_SKILLS_HOME") or Path.home() / ".signal-skills") / SKILL
+CONFIG_PATH = DATA_DIR / "config.json"
+STATE_DIR = DATA_DIR / "state"
+# Where earlier versions kept state: next to this file.
+LEGACY_DIRS = (ROOT, Path.home() / ".claude" / "skills" / SKILL, Path.home() / ".agents" / "skills" / SKILL)
+
+
+def migrate_legacy(data_dir=None, legacy_dirs=None):
+    """First run only: copy config.json and state/ from the first earlier
+    location that has them. Copies, never moves, and does nothing once
+    data_dir exists. Returns the folder copied from, or None."""
+    data_dir = Path(data_dir or DATA_DIR)
+    if data_dir.exists():
+        return None
+    for old in legacy_dirs or LEGACY_DIRS:
+        old = Path(old)
+        has_config, has_state = (old / "config.json").is_file(), (old / "state").is_dir()
+        if not (has_config or has_state):
+            continue
+        data_dir.mkdir(parents=True)
+        if has_config:
+            shutil.copy2(old / "config.json", data_dir / "config.json")
+        if has_state:
+            shutil.copytree(old / "state", data_dir / "state")
+        return old
+    return None
 
 
 def slugify(name):
@@ -214,6 +243,7 @@ def main():
     s.set_defaults(func=cmd_dedup)
 
     args = p.parse_args()
+    migrate_legacy()
     args.func(args)
 
 

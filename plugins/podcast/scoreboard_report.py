@@ -27,6 +27,7 @@ ROOT = Path(__file__).parent
 LEDGER = ROOT / "ledger.py"
 
 sys.path.insert(0, str(ROOT))
+from ledger import STATE_DIR  # noqa: E402
 from render_report import PayloadError, render_to  # noqa: E402
 
 TIER_BANDS = [
@@ -108,7 +109,7 @@ def build_payload(by_guest, min_tested):
         "headline": "Who's actually been right, graded against their own predictions",
         "query": f"Every {scope[:-1]} with a tracked prediction, ranked by confirmed hit rate, not by follower count or vibes.",
         "tiers": payload_tiers,
-        "footer_left": str(ROOT / "state"),
+        "footer_left": str(STATE_DIR),
         "footer_right": str(LEDGER),
     }
 
