@@ -10,6 +10,7 @@ import threading
 import unittest
 import urllib.error
 from collections import Counter
+from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
 from _loader import load
@@ -105,6 +106,76 @@ class IsYoutube(unittest.TestCase):
 
     def test_rejects_non_youtube(self):
         self.assertFalse(resolve.is_youtube("https://podcasts.apple.com/us/podcast/x/id123"))
+
+
+class ResolveSource(unittest.TestCase):
+    """Routing by hostname. iTunes is stubbed; every call is recorded."""
+
+    def setUp(self):
+        self.calls = []
+
+        def fake_itunes(params):
+            self.calls.append(params)
+            if params.startswith("search?"):
+                return {"results": [{"collectionId": 111, "collectionName": "Found Show"}]}
+            return {"results": [{"feedUrl": "https://feeds.example.com/found.xml", "collectionName": "Found Show"}]}
+
+        patcher = mock.patch.object(resolve, "itunes", fake_itunes)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def resolve_quietly(self, *args, **kwargs):
+        with redirect_stderr(io.StringIO()):
+            return resolve.resolve_source(*args, **kwargs)
+
+    def test_direct_feed_whose_url_contains_a_platform_name(self):
+        for url in ("https://feeds.megaphone.fm/pineapple-street", "https://feeds.simplecast.com/youtube-creators",
+                    "https://example.com/spotify-wrapped/feed.xml", "https://anchor.fm/s/abc/podcast/rss"):
+            self.assertEqual(self.resolve_quietly(url), (url, None, None, "(direct feed)"), url)
+        self.assertEqual(self.calls, [])
+
+    def test_apple_url_uses_the_show_id(self):
+        feed, show_id, ep_id, name = self.resolve_quietly("https://podcasts.apple.com/us/podcast/x/id123?i=456")
+        self.assertEqual((feed, show_id, ep_id, name), ("https://feeds.example.com/found.xml", "123", "456", "Found Show"))
+        self.assertEqual(self.calls, ["lookup?id=123&entity=podcast"])
+
+    def test_spotify_url_without_a_name_is_refused_not_searched(self):
+        with self.assertRaises(SystemExit) as ctx:
+            self.resolve_quietly("https://open.spotify.com/show/4rOoJ6Egrf8K2IrywzwOMk")
+        self.assertIn("--name", str(ctx.exception))
+        self.assertEqual(self.calls, [])
+
+    def test_spotify_url_with_a_name_searches_by_that_name(self):
+        feed, show_id, _, _ = self.resolve_quietly("https://open.spotify.com/show/4rOoJ6Egrf8K2IrywzwOMk", name="Found Show")
+        self.assertEqual((feed, show_id), ("https://feeds.example.com/found.xml", "111"))
+        self.assertIn("term=Found+Show", self.calls[0])
+
+    def test_bare_name_is_searched(self):
+        self.resolve_quietly("Found Show")
+        self.assertIn("term=Found+Show", self.calls[0])
+
+    def test_youtube_is_detected_by_host_only(self):
+        self.assertTrue(resolve.is_youtube("https://m.youtube.com/@handle"))
+        self.assertTrue(resolve.is_youtube("youtube.com/watch?v=abc"))
+        self.assertFalse(resolve.is_youtube("https://feeds.simplecast.com/notyoutube.com.xml"))
+        self.assertFalse(resolve.is_youtube("https://feeds.simplecast.com/youtube-creators"))
+
+
+class NotAFeed(unittest.TestCase):
+    def test_atom_and_html_are_reported_not_raised_as_internal_errors(self):
+        atom = b'<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>x</title></entry></feed>'
+        html = b"<html><body><p>hi<br></body></html>"
+        for body in (atom, html):
+            with self.assertRaises(resolve.NotAFeed):
+                resolve.parse_feed(body, 5)
+
+    def test_main_exits_with_a_message(self):
+        with mock.patch.object(resolve, "get", lambda url, timeout=60: b"<html><body><p>hi<br></body></html>"), \
+                mock.patch.object(sys, "argv", ["resolve.py", "https://example.com/page"]), \
+                redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                resolve.main()
+        self.assertIn("not an RSS podcast feed", str(ctx.exception))
 
 
 class FetchGuard(unittest.TestCase):
