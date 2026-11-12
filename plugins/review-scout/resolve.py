@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """First-mile resolver for the review-scout skill: detect what kind of
-product this repo is, and pull reviews from whichever surface actually has
-a compliant, free (or officially-authenticated) way to read them.
+product this repo is, and pull reviews from the two sources this script
+reads: Apple's public customer-reviews RSS feed, and Google's Play
+Developer API for an app you own.
 
-Deliberately does NOT scrape review sites that disallow it in their ToS
-(Google Play web pages, Chrome Web Store, G2, Capterra). Where no
-compliant path exists, this prints an explicit "no fetch, here's the
-manual path" message instead of silently doing nothing or quietly
-scraping anyway.
+It does not scrape store or review-site pages (Google Play web pages,
+Chrome Web Store, G2, Capterra). For those it prints an explicit "no
+fetch, here's the manual path" message instead of silently doing nothing.
+That is a design choice; this file makes no statement about what any
+site's terms allow.
 
 Subcommands:
   detect                                  -> guess product type from cwd
@@ -141,15 +142,14 @@ def cmd_fetch_ios(args):
 
 
 # --------------------------------------------------- Android (Play Store)
-# No public feed exists for Play reviews the way Apple's RSS works,
-# and scraping the Play Store web page is against Google's ToS. The only
-# compliant path is Google's official Android Publisher API
+# No public feed exists for Play reviews the way Apple's RSS works, and
+# this script does not scrape the Play Store web page. The path it uses
+# is Google's official Android Publisher API
 # (reviews.list), which requires: (a) you own the app / are on its Play
 # Console with the right permission, (b) a service-account key with the
 # Android Publisher API enabled. This is real friction relative to iOS —
 # say so rather than pretending it's equally free. It also only ever
-# covers YOUR OWN app, never a competitor's — there's no compliant way to
-# read a competitor's Play reviews at all.
+# covers YOUR OWN app, never a competitor's.
 
 def cmd_fetch_android(args):
     try:
@@ -165,8 +165,8 @@ def cmd_fetch_android(args):
             "grant it 'View app information (read-only)' in Play Console > "
             "Users and permissions, download its JSON key, and pass that "
             "path as --credentials.\n"
-            "This only ever works for an app you own — there is no "
-            "compliant way to read a competitor's Play Store reviews.",
+            "This only ever works for an app you own; this script has no "
+            "way to read a competitor's Play Store reviews.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -214,20 +214,20 @@ def cmd_fetch_android(args):
 
 GUIDANCE = {
     "chrome-extension": (
-        "Chrome Web Store has no public reviews API and scraping the store "
-        "page violates Google's ToS. Compliant path: the Chrome Web Store "
+        "Chrome Web Store has no public reviews API, and this script does "
+        "not scrape the store page. Manual path: the Chrome Web Store "
         "Developer Dashboard lets you export your own extension's reviews "
         "manually (Dashboard > your item > Reviews). Export to CSV/JSON, "
         "drop it in a `tx/` dir, and feed it to Step 3 the same way a "
         "fetched batch would be."
     ),
     "web-saas": (
-        "G2, Capterra, and TrustRadius don't offer a free compliant public "
-        "reviews API; scraping their pages violates ToS. Compliant paths: "
+        "G2, Capterra, and TrustRadius don't offer a free public reviews "
+        "API, and this script does not scrape their pages. Other paths: "
         "G2's paid Data API (if you're a G2 customer), or a manual export "
         "of your own product's reviews from each platform's vendor "
         "dashboard. If you run in-app feedback/NPS, that's usually the "
-        "richer and fully-compliant source anyway — mine that instead via "
+        "richer source anyway — mine that instead via "
         "whatever analytics/support platform you already have connected."
     ),
     "desktop": (

@@ -39,16 +39,16 @@ than guessing at that point.
 
 Map the detected kind to a source:
 
-| kind | source | compliant path |
+| kind | source | how reviews are read |
 |---|---|---|
 | `mobile-app` (iOS) | App Store | `resolve.py fetch-ios` — free public RSS feed, works for ANY app (yours or a competitor's), no auth |
 | `mobile-app` (Android) | Play Store | `resolve.py fetch-android` — official Play Developer API, needs a service account, **only works for an app you own** |
-| `browser-extension` | Chrome Web Store / Firefox Add-ons | `resolve.py guidance chrome-extension` — no compliant public API, manual export from your own Dev Dashboard |
-| `web-saas` | G2 / Capterra / TrustRadius | `resolve.py guidance web-saas` — no compliant free API either; manual export or your own in-app feedback/NPS is usually the better source anyway |
+| `browser-extension` | Chrome Web Store / Firefox Add-ons | `resolve.py guidance chrome-extension` — no public API, nothing is fetched; manual export from your own Dev Dashboard |
+| `web-saas` | G2 / Capterra / TrustRadius | `resolve.py guidance web-saas` — no free API either, nothing is fetched; manual export or your own in-app feedback/NPS is usually the better source anyway |
 | desktop | Mac App Store / other | `resolve.py guidance desktop` — Mac App Store reuses `fetch-ios`; others have no free feed |
 
-**Do not scrape review sites whose ToS disallows it** (Play Store web
-pages, Chrome Web Store, G2, Capterra). Where no compliant path exists,
+**Do not scrape store or review-site pages** (Play Store web
+pages, Chrome Web Store, G2, Capterra). Where `resolve.py` has no fetch path,
 say so and point at the manual export — never silently scrape anyway,
 and never silently skip without telling the user why.
 

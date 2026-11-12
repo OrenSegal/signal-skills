@@ -53,7 +53,8 @@ directly or say so.
   into the wrong skill's `config.json`/`state/`. If you're tempted to
   dedupe this file again, don't — read the docstring in any of the three
   copies for the full story first.
-- **`AGENTS.md`** — every skill in this family has one, pointing any
+- **`AGENTS.md`** — `podcast`, `review-scout`, `ideation` and `signal-report`
+  each have one (`research-suite` and `signal-outreach` do not), pointing any
   non-Claude harness (OpenCode, Codex CLI, etc.) back at `SKILL.md` as
   the single source of truth, and documenting the two Claude-specific
   fallbacks every skill needs (subagent fan-out → sequential fallback;
