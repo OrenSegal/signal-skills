@@ -64,7 +64,7 @@ The design decisions and rejected alternatives are in [`docs/decisions.md`](docs
 
 ## Requirements
 
-- Python 3. Fetching from Apple, Spotify, RSS, and App Store reviews uses only the standard library.
+- Python 3. Fetching from Apple, RSS, and App Store reviews uses only the standard library. A Spotify link is not fetched; give the show's name with it.
 - [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) on `PATH`, only for YouTube URLs (`brew install yt-dlp` or `pipx install yt-dlp`).
 - `google-api-python-client` and `google-auth`, only for `review-scout`'s Android/Play Store path. That path works for your own app only and needs a service account. iOS review mining needs nothing extra.
 
