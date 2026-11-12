@@ -6,8 +6,8 @@ Six agent skills for Claude Code and Codex CLI that mine podcasts and user revie
 
 | Skill | What it does |
 |-------|--------------|
-| `podcast` | Mines a podcast (Apple Podcasts, Spotify, RSS, or YouTube) for ideas and predictions, and answers questions from everything mined so far. |
-| `review-scout` | Mines app store, browser extension, or web/SaaS reviews into ranked bugs, feature-request clusters, and cross-version regressions. |
+| `podcast` | Mines a podcast (Apple Podcasts, RSS, YouTube, or a show name) for ideas and predictions, and answers questions from everything mined so far. |
+| `review-scout` | Mines App Store reviews (any app) and Play Store reviews (your own app) into ranked bugs, feature-request clusters, and cross-version regressions. For browser extensions and web/SaaS it fetches nothing and works from an export you supply. |
 | `ideation` | Reads the findings from `podcast` and `review-scout` and proposes what to build, fix, or test next, with citations. |
 | `signal-report` | Renders a findings payload into one prioritized, shareable Artifact. |
 | `research-suite` | A router that tells you which of the skills above fits your request. |
@@ -61,6 +61,13 @@ Both committed examples are hand-written inputs run through the real renderers, 
 - **Narrow review coverage.** Android reviews need a service account and work only for an app you own.
 
 The design decisions and rejected alternatives are in [`docs/decisions.md`](docs/decisions.md).
+
+## What the scripts fetch
+
+- `podcast/resolve.py`: the iTunes Search and Lookup API (`itunes.apple.com`) to find a show's feed; the show's RSS feed; the transcript URLs that feed lists. For YouTube it runs `yt-dlp` to read video metadata and caption tracks; whether that fits YouTube's terms for your use is yours to check. User agent `Mozilla/5.0 (compatible; podcast-skill/1.0)`.
+- `review-scout/resolve.py`: `itunes.apple.com/<country>/rss/customerreviews/...` (5 pages by default), and the Play Developer API with your service account.
+- No script reads `robots.txt` or waits between requests. Volumes are small (12 episodes and 5 review pages by default).
+- Web cross-checks in `podcast` are done by the agent's own web search tool, not by these scripts.
 
 ## Requirements
 

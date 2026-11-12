@@ -26,11 +26,11 @@ Three decisions behind the repo's shape. Where the reasoning was not written dow
 
 **Evidence.** c3a0f28 / #1.
 
-## 3. `review-scout` uses only sources with a documented, permitted access path
+## 3. `review-scout` reads two sources and scrapes no pages
 
 **Context.** Review mining could scrape store pages.
 
-**Decision.** iOS reviews come from Apple's public RSS feed; Android reviews come from Google's Play Developer API, which only works for an app you own. Where no permitted path exists, the skill says so.
+**Decision.** iOS reviews come from Apple's public RSS feed; Android reviews come from Google's Play Developer API, which only works for an app you own. For anything else the script fetches nothing and prints how to export your own reviews. Whether a given site's terms would allow scraping was not researched; none is done.
 
 **Alternatives considered.** Scraping store pages or third-party review APIs. Reasoning not recorded beyond the SKILL.md rule.
 
