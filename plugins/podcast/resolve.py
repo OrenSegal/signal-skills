@@ -3,13 +3,14 @@
 
 Works for ANY show, not one hardcoded feed.
 
-  python3 resolve.py "<url-or-show-name>" [--episode-id ID] [--limit N] [--download DIR]
+  python3 resolve.py "<url-or-show-name>" [--name SHOW] [--limit N] [--download DIR]
 
 Handles:
   podcasts.apple.com/<cc>/podcast/<slug>/id<SHOW>?i=<EPISODE>
-  open.spotify.com/show/... (falls back to name search)
-  a direct RSS/XML url
-  a bare show name (searched via iTunes)
+  a direct RSS url (any other http(s) URL is treated as one)
+  a bare show name, or --name SHOW (searched via iTunes; the first hit is used)
+  open.spotify.com/show/... only together with --name: Spotify has no open
+    API, so the link itself cannot be resolved
   youtube.com/watch?v=... or youtu.be/... (single video)
   youtube.com/@handle, /channel/UC..., /playlist?list=... (multiple videos, needs --limit)
 
@@ -123,8 +124,27 @@ def itunes(params):
     return json.loads(get("https://itunes.apple.com/" + params).decode("utf-8", "replace"))
 
 
+class NotAFeed(Exception):
+    """The fetched document is not an RSS feed."""
+
+
+def _host(src):
+    """Hostname of a URL, with or without its scheme; "" for a bare show name."""
+    if "://" not in src and re.match(r"[\w.-]+\.[a-z]{2,}(/|$)", src, re.IGNORECASE):
+        src = "https://" + src
+    try:
+        return (urllib.parse.urlsplit(src).hostname or "").lower() if "://" in src else ""
+    except ValueError:
+        return ""
+
+
+def _on(host, domain):
+    return host == domain or host.endswith("." + domain)
+
+
 def is_youtube(src):
-    return bool(re.search(r"youtube\.com|youtu\.be", src))
+    host = _host(src)
+    return _on(host, "youtube.com") or _on(host, "youtu.be")
 
 
 def yt_dlp_json(url, extra=()):
@@ -220,27 +240,31 @@ def run_youtube(src, limit, dl):
     print(f"\nmanifest: {os.path.join(dl, 'manifest.json')}  ({len(man)} files)")
 
 
-def resolve_source(src):
-    """-> (feed_url, show_id|None, episode_id|None, show_name)"""
-    # Direct RSS
-    if re.search(r"\.(xml|rss)(\?|$)", src) or "/feed" in src or src.startswith("http") and "podcasts.apple" not in src and "spotify" not in src and "youtube" not in src:
-        if src.startswith("http") and not re.search(r"apple|spotify|youtu", src):
-            return src, None, None, "(direct feed)"
+def resolve_source(src, name=None):
+    """-> (feed_url, show_id|None, episode_id|None, show_name)
+
+    Routed on the hostname, never on a substring: a feed URL that merely
+    contains "apple" or "spotify" is still a feed."""
+    host = _host(src)
+    is_apple, is_spotify = _on(host, "apple.com"), _on(host, "spotify.com")
+    if host and not (is_apple or is_spotify):
+        return (src if "://" in src else "https://" + src), None, None, "(direct feed)"
 
     show_id = ep_id = None
-    m = re.search(r"/id(\d+)", src)
-    if m:
-        show_id = m.group(1)
-    m = re.search(r"[?&]i=(\d+)", src)
-    if m:
-        ep_id = m.group(1)
+    if is_apple:
+        m = re.search(r"/id(\d+)", src)
+        if m:
+            show_id = m.group(1)
+        m = re.search(r"[?&]i=(\d+)", src)
+        if m:
+            ep_id = m.group(1)
 
     if not show_id:
-        # Spotify or bare name -> search iTunes by name
-        name = src
-        if "spotify.com" in src:
-            print("! Spotify has no open API; searching iTunes by name instead.", file=sys.stderr)
-            name = input("Show name: ") if sys.stdin.isatty() else src
+        if host and not name:
+            what = "Spotify has no open API, so a Spotify link" if is_spotify else "This Apple link has no show id, so it"
+            sys.exit(f'{what} cannot be resolved to a feed. Run again with the show\'s name: '
+                     f'resolve.py "{src}" --name "<show name>", or pass its RSS or Apple Podcasts URL.')
+        name = name or src
         q = urllib.parse.urlencode({"term": name, "entity": "podcast", "limit": 5})
         res = itunes("search?" + q).get("results", [])
         if not res:
@@ -269,7 +293,13 @@ def episode_title_for_id(show_id, ep_id):
 
 
 def parse_feed(xml_bytes, limit):
-    ch = ET.fromstring(xml_bytes).find("channel")
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError as ex:
+        raise NotAFeed(f"not XML: {ex}") from ex
+    ch = root.find("channel")
+    if ch is None:
+        raise NotAFeed(f"root element is <{root.tag.rsplit('}', 1)[-1]}>, not an RSS <rss><channel>")
     out = []
     for it in ch.findall("item")[:limit]:
         tr = it.find("podcast:transcript", PNS)
@@ -302,7 +332,8 @@ def main():
     a = sys.argv[1:]
     if not a:
         sys.exit(__doc__)
-    src = a[0]
+    name = a[a.index("--name") + 1] if "--name" in a else None
+    src = name if a[0].startswith("--") else a[0]
     limit = int(a[a.index("--limit") + 1]) if "--limit" in a else 12
     dl = a[a.index("--download") + 1] if "--download" in a else None
 
@@ -310,7 +341,7 @@ def main():
         run_youtube(src, limit, dl)
         return
 
-    feed, show_id, ep_id, name = resolve_source(src)
+    feed, show_id, ep_id, name = resolve_source(src, name)
     print(f"show: {name}\nfeed: {feed}")
 
     target = episode_title_for_id(show_id, ep_id)
@@ -321,6 +352,8 @@ def main():
         eps = parse_feed(get(feed), limit)
     except BlockedURL as ex:
         sys.exit(f"Refused to fetch the feed: {ex}")
+    except NotAFeed as ex:
+        sys.exit(f"{feed} is not an RSS podcast feed ({ex}). Pass the show's RSS URL, its Apple Podcasts URL, or its name.")
     have = sum(1 for e in eps if e["transcript"])
     print(f"episodes: {len(eps)} shown, {have} with embedded transcripts\n")
     for i, e in enumerate(eps):

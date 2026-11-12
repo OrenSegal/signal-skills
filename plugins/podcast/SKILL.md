@@ -1,6 +1,6 @@
 ---
 name: podcast
-description: Pull podcast transcripts on demand and mine them for ideas, trends, and mechanics — without dumping raw transcript into context. Use when the user shares a podcast/episode URL, names a show, or asks what's worth taking from an episode/series. Handles Apple Podcasts, Spotify, YouTube, and RSS feeds.
+description: Pull podcast transcripts on demand and mine them for ideas, trends, and mechanics — without dumping raw transcript into context. Use when the user shares a podcast/episode URL, names a show, or asks what's worth taking from an episode/series. Handles Apple Podcasts, YouTube, RSS feeds, and show names; a Spotify link needs the show's name.
 metadata:
   openclaw:
     homepage: https://github.com/OrenSegal/signal-skills
@@ -118,8 +118,8 @@ Don't hand-roll curl pipelines; don't hardcode a feed.
 python3 ~/.claude/skills/podcast/resolve.py "<url-or-show-name>" --limit 12 --download tx/
 ```
 
-Accepts an Apple URL, a Spotify URL, a direct RSS URL, a bare show name,
-or a YouTube URL. Prints the feed, marks the `?i=` target episode, lists
+Accepts an Apple URL, a direct RSS URL, a bare show name, a YouTube URL,
+or a Spotify URL together with `--name "<show name>"`. Prints the feed, marks the `?i=` target episode, lists
 which episodes have transcripts, and with `--download` writes flattened
 `.txt` plus a `manifest.json` (title, date, path, words, target).
 
@@ -129,7 +129,9 @@ What it encodes, so you don't rediscover it:
 - **The `?i=<EPISODE_ID>` DOES resolve** — but only via the *show* lookup
   with `entity=podcastEpisode&limit=200`, matching on `trackId`. Looking
   up the episode id directly returns `resultCount:0`. This is the trap.
-- Spotify has no open API — fall back to iTunes name search.
+- Spotify has no open API, so a Spotify link alone exits with a message.
+  Ask the user for the show's name and pass `--name`; the name is searched
+  on iTunes and the first hit is used, so check the `show:` line it prints.
 - Some shows (Apple-exclusive) expose no `feedUrl`. Say so, don't guess.
 
 **YouTube gets its own path in `resolve.py`** — it isn't RSS, so it
