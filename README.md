@@ -33,7 +33,7 @@ Both tools read the same folder shape (`SKILL.md` plus scripts), just from diffe
 
 ## Beyond a one-shot summary
 
-Each mining run writes to a per-show or per-app ledger (`ledger.py`), so results build up across runs instead of resetting.
+Each mining run writes to a per-show or per-app ledger (`ledger.py`), so results build up across runs instead of resetting. Ledgers and preferences are kept in `~/.signal-skills/<skill>/` (set `SIGNAL_SKILLS_HOME` to move them), outside the install folder, so a plugin update or a second host does not start from empty. Earlier versions kept them next to the scripts; the first run copies them over.
 
 - **Query the whole corpus.** `ledger.py query --topic pricing` searches every finding `podcast` has recorded, across every show, without re-fetching transcripts.
 - **Prediction scoreboard.** Falsifiable predictions made by guests are tracked and later resolved as confirmed, failed, or stale. `ledger.py scoreboard [--by-guest]` turns that into a hit-rate leaderboard showing which shows (or guests) turned out to be right over time.

@@ -6,6 +6,8 @@ metadata:
     homepage: https://github.com/OrenSegal/signal-skills
 ---
 
+**Paths.** `SKILL_DIR` in the commands below is the folder that holds this file and its scripts. On Claude Code it is `${CLAUDE_SKILL_DIR}`. If that still reads as a variable name, your host does not fill it in: use the folder this file was loaded from (for Codex, `~/.agents/skills/signal-report`). Put the real path in place of `SKILL_DIR` when you run a command.
+
 Render everything relevant, ranked, with reasoning. Don't curate down to a
 "top 3" and don't dump an uncurated section-by-section wall either. Every
 item in scope for the query gets a slot; priority order does the filtering
@@ -36,7 +38,7 @@ one-line reasoning attached to each finding. Build the JSON payload, then
 run:
 
 ```bash
-python3 ~/.claude/skills/signal-report/render_report.py payload.json out.html
+python3 SKILL_DIR/render_report.py payload.json out.html
 ```
 
 and publish `out.html` with the `Artifact` tool on Claude Code. On any
@@ -52,7 +54,7 @@ target in the same invocation — same payload, same validation, picked by
 the output file's extension:
 
 ```bash
-python3 ~/.claude/skills/signal-report/render_report.py payload.json out.html out.md
+python3 SKILL_DIR/render_report.py payload.json out.html out.md
 ```
 
 ## Rules
