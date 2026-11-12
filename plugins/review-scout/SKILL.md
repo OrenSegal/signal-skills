@@ -8,6 +8,8 @@ metadata:
       bins: [python3]
 ---
 
+**Paths.** `SKILL_DIR` in the commands below is the folder that holds this file and its scripts. On Claude Code it is `${CLAUDE_SKILL_DIR}`. If that still reads as a variable name, your host does not fill it in: use the folder this file was loaded from (for Codex, `~/.agents/skills/review-scout`). Put the real path in place of `SKILL_DIR` when you run a command.
+
 Turn scattered star ratings and free-text reviews into extracted, ranked
 findings — the same extract-don't-summarize discipline as the `podcast`
 skill, applied to user feedback instead of episode transcripts. Raw
@@ -25,7 +27,7 @@ vibes.
 ## Step 1 — Detect the product type, don't assume "app store"
 
 ```bash
-python3 ~/.claude/skills/review-scout/resolve.py detect --path .
+python3 SKILL_DIR/resolve.py detect --path .
 ```
 
 Only reach for an app store as a source if this actually IS an app.
@@ -53,7 +55,7 @@ and never silently skip without telling the user why.
 ## Step 0 — Check the ledger before doing anything
 
 ```bash
-python3 ~/.claude/skills/review-scout/ledger.py mined --app "<app name>"
+python3 SKILL_DIR/ledger.py mined --app "<app name>"
 ```
 
 Cross-reference against the batch you're about to fetch (e.g.
@@ -62,8 +64,8 @@ Cross-reference against the batch you're about to fetch (e.g.
 ## Step 2 — Fetch
 
 ```bash
-python3 ~/.claude/skills/review-scout/resolve.py fetch-ios --app-id <id> --country us --pages 5 --download tx/
-python3 ~/.claude/skills/review-scout/resolve.py fetch-android --package <pkg> --credentials sa.json --download tx/
+python3 SKILL_DIR/resolve.py fetch-ios --app-id <id> --country us --pages 5 --download tx/
+python3 SKILL_DIR/resolve.py fetch-android --package <pkg> --credentials sa.json --download tx/
 ```
 
 Both write a flattened `.txt` plus a manifest (source, count, date range,
@@ -110,7 +112,7 @@ Rules for every extractor:
 After each extractor returns, record it:
 
 ```bash
-python3 ~/.claude/skills/review-scout/ledger.py record --app "<app>" --batch "<batch>" \
+python3 SKILL_DIR/ledger.py record --app "<app>" --batch "<batch>" \
   --source ios-app-store --date-range "<range>" --findings-path "<path>" \
   --regressions-json '["<regression note>", "..."]'
 ```
@@ -118,8 +120,8 @@ python3 ~/.claude/skills/review-scout/ledger.py record --app "<app>" --batch "<b
 ## Step 3.5 — Check known issues, surface cross-version regressions
 
 ```bash
-python3 ~/.claude/skills/review-scout/ledger.py known-issues --app "<app name>"
-python3 ~/.claude/skills/review-scout/ledger.py dedup --threshold 0.5
+python3 SKILL_DIR/ledger.py known-issues --app "<app name>"
+python3 SKILL_DIR/ledger.py dedup --threshold 0.5
 ```
 
 A complaint that token-overlaps with an older regression note, in a LATER
@@ -164,7 +166,7 @@ already fixed once", "Feature-request cluster", "Keep doing this") and
 run:
 
 ```bash
-python3 ~/.claude/skills/review-scout/render_report.py payload.json out.html
+python3 SKILL_DIR/render_report.py payload.json out.html
 ```
 
 Publish with `Artifact` on Claude Code; elsewhere use `--open` or report
@@ -174,13 +176,13 @@ For actionable text/prompt output instead of (or alongside) the Artifact,
 add a `.md` target in the same invocation:
 
 ```bash
-python3 ~/.claude/skills/review-scout/render_report.py payload.json out.html out.md
+python3 SKILL_DIR/render_report.py payload.json out.html out.md
 ```
 
 ## Hygiene
 
 - Raw review batches go to the scratchpad, never the repo.
-- State lives in `~/.claude/skills/review-scout/config.json` (preferences,
+- State lives in `~/.signal-skills/review-scout/config.json` (preferences,
   e.g. `analytics_backend`) and `state/<app-slug>.json` (per-app ledger).
   Deliberately NOT shared/symlinked with `podcast`'s ledger even though
   the code is nearly identical — state correctness requires each skill to

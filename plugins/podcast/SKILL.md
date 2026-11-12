@@ -8,6 +8,8 @@ metadata:
       bins: [python3]
 ---
 
+**Paths.** `SKILL_DIR` in the commands below is the folder that holds this file and its scripts. On Claude Code it is `${CLAUDE_SKILL_DIR}`. If that still reads as a variable name, your host does not fill it in: use the folder this file was loaded from (for Codex, `~/.agents/skills/podcast`). Put the real path in place of `SKILL_DIR` when you run a command.
+
 Turn podcasts into extracted findings. The whole point is that raw
 transcript NEVER enters main context — subagents eat the noise, you keep
 the signal.
@@ -65,7 +67,7 @@ doesn't repeat work: which episodes are already extracted, what predictions
 are still open, and cross-show overlap.
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py mined --show "<show name>"
+python3 SKILL_DIR/ledger.py mined --show "<show name>"
 ```
 
 Cross-reference this against the episode list `resolve.py` returns (Step 1)
@@ -81,8 +83,8 @@ rather than asking you to mine a URL, answer straight from the ledger and
 stop — no `resolve.py`, no transcripts, no extractor fan-out:
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py query --topic "<topic>" [--show "<show>"] [--since 2026-01-01] [--tag measured]
-python3 ~/.claude/skills/podcast/ledger.py scoreboard [--by-guest]
+python3 SKILL_DIR/ledger.py query --topic "<topic>" [--show "<show>"] [--since 2026-01-01] [--tag measured]
+python3 SKILL_DIR/ledger.py scoreboard [--by-guest]
 ```
 
 `query` searches every finding ever recorded (Step 3 stores them, not just
@@ -95,9 +97,9 @@ anything else.
 ### Watched shows ("check subscriptions")
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py subscribe --show "<url-or-show-name>"
-python3 ~/.claude/skills/podcast/ledger.py subscriptions
-python3 ~/.claude/skills/podcast/ledger.py unsubscribe --show "<url-or-show-name>"
+python3 SKILL_DIR/ledger.py subscribe --show "<url-or-show-name>"
+python3 SKILL_DIR/ledger.py subscriptions
+python3 SKILL_DIR/ledger.py unsubscribe --show "<url-or-show-name>"
 ```
 
 When the user says "watch this show" or "check my subscriptions": for each
@@ -115,7 +117,7 @@ show up on a cadence instead of only on request.
 Don't hand-roll curl pipelines; don't hardcode a feed.
 
 ```bash
-python3 ~/.claude/skills/podcast/resolve.py "<url-or-show-name>" --limit 12 --download tx/
+python3 SKILL_DIR/resolve.py "<url-or-show-name>" --limit 12 --download tx/
 ```
 
 Accepts an Apple URL, a Spotify URL, a direct RSS URL, a bare show name,
@@ -161,7 +163,7 @@ Fallback order when `resolve.py` prints no `podcast:transcript` tags:
 Before step 3, check the remembered preference:
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py config-get transcription_method
+python3 SKILL_DIR/ledger.py config-get transcription_method
 ```
 
 - If it returns `local` or `cloud`, use that method silently — don't re-ask.
@@ -248,7 +250,7 @@ or prediction can be attributed to a specific guest/host, pass `speaker` on
 the prediction object (plain strings still work when it can't be):
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py record --show "<show name>" \
+python3 SKILL_DIR/ledger.py record --show "<show name>" \
   --episode "<title>" --date "<date>" --findings-path "<path to saved findings>" \
   --findings-json '[{"claim": "...", "tag": "measured", "topic": "..."}]' \
   --predictions-json '[{"text": "<prediction 1>", "speaker": "<guest name>"}, "<prediction 2, unattributed>"]'
@@ -260,8 +262,8 @@ Before synthesizing, pull what earlier mining runs (on this show or others)
 already put on record:
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py predictions --show "<show name>"
-python3 ~/.claude/skills/podcast/ledger.py dedup --threshold 0.5
+python3 SKILL_DIR/ledger.py predictions --show "<show name>"
+python3 SKILL_DIR/ledger.py dedup --threshold 0.5
 ```
 
 - **Predictions**: for each open prediction, check whether anything in the
@@ -327,7 +329,7 @@ found) plus the URL it used. Feed that straight back into the ledger so the
 scoreboard carries real evidence, not vibes:
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py check-prediction --show "<show>" \
+python3 SKILL_DIR/ledger.py check-prediction --show "<show>" \
   --episode "<title>" --text "<substring>" --status confirmed|failed \
   --source-url "<url the web check used>"
 ```
@@ -382,7 +384,7 @@ no skill-to-skill call at runtime).
 headline, query, tiers[].items[]) and run:
 
 ```bash
-python3 ~/.claude/skills/podcast/render_report.py payload.json out.html
+python3 SKILL_DIR/render_report.py payload.json out.html
 ```
 
 then publish `out.html` with the `Artifact` tool on Claude Code. On any
@@ -397,7 +399,7 @@ in the same invocation — same payload, same validation, picked by file
 extension:
 
 ```bash
-python3 ~/.claude/skills/podcast/render_report.py payload.json out.html out.md
+python3 SKILL_DIR/render_report.py payload.json out.html out.md
 ```
 
 The script owns all the
@@ -457,8 +459,8 @@ data Step 3/3.5/3.7 already recorded — no new mining, no new LLM calls, just
 reformatting the ledger:
 
 ```bash
-python3 ~/.claude/skills/podcast/scoreboard_report.py out.html out.md
-python3 ~/.claude/skills/podcast/scoreboard_report.py --by-guest --min-tested 2 out.html
+python3 SKILL_DIR/scoreboard_report.py out.html out.md
+python3 SKILL_DIR/scoreboard_report.py --by-guest --min-tested 2 out.html
 ```
 
 Reuses `render_report.py`/`template.html` (hit-rate bands as tiers instead
@@ -523,8 +525,8 @@ that's the token spend this skill exists to justify.
 - 12 episodes ≈ 80k words ≈ free via RSS. Whisper on 12 episodes is ~1hr
   of compute. Always check step 2's fallback ladder before reaching for
   Whisper/cloud ASR.
-- State lives in `~/.claude/skills/podcast/config.json` (preferences +
-  `subscriptions`) and `~/.claude/skills/podcast/state/<show-slug>.json`
+- State lives in `~/.signal-skills/podcast/config.json` (preferences +
+  `subscriptions`) and `~/.signal-skills/podcast/state/<show-slug>.json`
   (per-show ledger: mined episodes, findings, predictions). Both are plain
   JSON, inspectable/editable by hand if the ledger ever needs correcting.
 - To run "check subscriptions" on a cadence instead of only on request, use

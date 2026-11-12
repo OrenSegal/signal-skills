@@ -48,7 +48,7 @@ not force-fit a claim into a query it doesn't actually match.
 Check the remembered preference first:
 
 ```bash
-python3 ~/.claude/skills/podcast/ledger.py config-get analytics_backend
+python3 SKILL_DIR/ledger.py config-get analytics_backend
 ```
 
 If it returns something, use that backend silently. If empty, detect in

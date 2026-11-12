@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-from _loader import load
+from _loader import REPO_ROOT, load
 
 ledger = load("podcast", "ledger.py")
 
@@ -280,6 +280,43 @@ class Dedup(IsolatedState):
         })
         out = json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5))
         self.assertEqual(out, [])
+
+
+class StateLocationTest(unittest.TestCase):
+    """State must not live in the install folder, and state written there by
+    an earlier version must be carried over once."""
+
+    def test_state_is_outside_the_install_folder(self):
+        for plugin in ("podcast", "review-scout", "ideation"):
+            mod = load(plugin, "ledger.py")
+            self.assertNotIn(mod.ROOT, mod.CONFIG_PATH.parents, plugin)
+            self.assertEqual(mod.CONFIG_PATH.parent.name, plugin)
+
+    def test_legacy_state_is_copied_once_and_left_in_place(self):
+        for plugin in ("podcast", "review-scout", "ideation"):
+            mod = load(plugin, "ledger.py")
+            with tempfile.TemporaryDirectory() as tmp:
+                old, new = Path(tmp) / "old", Path(tmp) / "data" / plugin
+                (old / "state").mkdir(parents=True)
+                (old / "state" / "a.json").write_text('{"k": 1}')
+                (old / "config.json").write_text('{"pref": "x"}')
+                self.assertEqual(mod.migrate_legacy(new, [Path(tmp) / "missing", old]), old)
+                self.assertEqual(json.loads((new / "state" / "a.json").read_text()), {"k": 1})
+                self.assertEqual(json.loads((new / "config.json").read_text()), {"pref": "x"})
+                self.assertTrue((old / "state" / "a.json").exists())
+                (new / "config.json").write_text('{"pref": "changed"}')
+                self.assertIsNone(mod.migrate_legacy(new, [old]))
+                self.assertEqual(json.loads((new / "config.json").read_text()), {"pref": "changed"})
+
+    def test_nothing_is_created_when_there_is_no_legacy_state(self):
+        mod = load("podcast", "ledger.py")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(mod.migrate_legacy(Path(tmp) / "data", [Path(tmp) / "none"]))
+            self.assertFalse((Path(tmp) / "data").exists())
+
+    def test_no_command_in_a_skill_file_names_a_fixed_install_path(self):
+        for path in sorted((REPO_ROOT / "plugins").glob("*/*.md")):
+            self.assertNotIn("~/.claude/skills", path.read_text(encoding="utf-8"), path)
 
 
 if __name__ == "__main__":
