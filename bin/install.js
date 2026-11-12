@@ -20,7 +20,7 @@ const TARGETS = [
 ];
 
 // Files we never overwrite once a user has run the skill and built up state.
-const PRESERVE_IF_EXISTS = new Set(["config.json"]);
+const PRESERVE_IF_EXISTS = new Set(["config.json", "sources.md"]);
 
 function copyDir(src, dest, skillsDir) {
   fs.mkdirSync(dest, { recursive: true });

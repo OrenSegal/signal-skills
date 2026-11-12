@@ -45,11 +45,11 @@ Whichever lens applies, it changes what counts as fluff vs. payload in
 Step 3 and how Step 4 frames relevance — decide it before fanning out
 extractors, not after.
 
-## Recommended sources (mobile app growth / ASO / monetization lens)
+## Your source list
 
-`sources.md` (next to this file) is a curated, hand-maintained list of shows
-worth mining for a mobile/consumer-app builder — not an exhaustive directory,
-just ones that either scored well on a past mining run or fill a specific
+`sources.md` (next to this file) is the user's own hand-maintained list of shows
+worth mining. It ships empty and is not an exhaustive directory: it holds
+shows that either scored well on a past mining run or fill a specific
 gap (a different angle on a claim already in the ledger, so cross-show dedup
 has something to check against). When the user asks "what else should I
 mine" or "find me more sources like X," read `sources.md` first instead of
@@ -353,7 +353,7 @@ One episode is one opinion. The trend only exists across episodes.
   mining for?" above). "What's trending" is generic slop regardless of
   lens. "What does this confirm, contradict, or add to the specific thing
   the user is actually working on" is the useful question, whatever that
-  thing is this run — it isn't always Shelfie, and it isn't always
+  thing is this run — it isn't always one product, and it isn't always
   customer/monetization relevance.
 
 ## Step 4.5 — Cross-check against your own analytics (optional)
