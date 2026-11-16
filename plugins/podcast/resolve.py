@@ -3,7 +3,11 @@
 
 Works for ANY show, not one hardcoded feed.
 
-  python3 resolve.py "<url-or-show-name>" [--name SHOW] [--limit N] [--download DIR]
+  python3 resolve.py "<url-or-show-name>" [--name SHOW] [--limit N] [--download DIR] [--use-proxy]
+
+Fetches connect directly and refuse non-public addresses at connect time.
+HTTP(S)_PROXY is ignored unless --use-proxy is passed, for a machine with no
+direct route out; the proxy then connects, so DNS rebinding is not prevented.
 
 Handles:
   podcasts.apple.com/<cc>/podcast/<slug>/id<SHOW>?i=<EPISODE>
@@ -21,6 +25,7 @@ manual subs if present). No podcast:transcript tag equivalent exists, so
 `have` transcript count reflects whichever videos actually have an en/en-orig
 caption track — some videos (esp. very new ones) may have none yet.
 """
+import http.client
 import ipaddress
 import json
 import os
@@ -96,12 +101,61 @@ def check_url(url):
     if _is_noncanonical_numeric_host(parts.hostname):
         raise BlockedURL(f"host {parts.hostname} is a non-canonical numeric address")
     try:
-        infos = socket.getaddrinfo(parts.hostname, parts.port or 443, 0, socket.SOCK_STREAM)
+        _checked_addresses(parts.hostname, parts.port or 443)
     except socket.gaierror:
-        return  # the fetch reports it, or a proxy resolves it for us
+        return  # the fetch reports it, or with --use-proxy the proxy resolves it
+
+
+def _checked_addresses(host, port):
+    infos = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
     for info in infos:
         if is_blocked_ip(ipaddress.ip_address(str(info[4][0]).split("%", 1)[0])):
-            raise BlockedURL(f"{parts.hostname} resolves to non-public address {info[4][0]}")
+            raise BlockedURL(f"{host} resolves to non-public address {info[4][0]}")
+    return infos
+
+
+def _guarded_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+    """socket.create_connection that connects only to the addresses it just checked,
+    so a DNS answer that changes after check_url (rebinding) cannot reach a local service."""
+    host, port = address
+    error = None
+    for family, socktype, proto, _, sockaddr in _checked_addresses(host, port):
+        sock = socket.socket(family, socktype, proto)
+        try:
+            if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                sock.settimeout(timeout)
+            if source_address:
+                sock.bind(source_address)
+            sock.connect(sockaddr)
+            return sock
+        except OSError as ex:
+            error = ex
+            sock.close()
+    raise error or OSError(f"no addresses for {host}")
+
+
+class _Guarded:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._create_connection = _guarded_connection  # http.client opens every socket through this
+
+
+class _GuardedHTTPConnection(_Guarded, http.client.HTTPConnection):
+    pass
+
+
+class _GuardedHTTPSConnection(_Guarded, http.client.HTTPSConnection):
+    pass
+
+
+class _GuardedHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_GuardedHTTPConnection, req)
+
+
+class _GuardedHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_GuardedHTTPSConnection, req, context=self._context)
 
 
 class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
@@ -110,12 +164,18 @@ class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-_OPENER = urllib.request.build_opener(_CheckedRedirects)
+def _opener(use_proxy=False):
+    if use_proxy:  # the proxy connects, so only check_url's earlier lookup applies
+        return urllib.request.build_opener(_CheckedRedirects)
+    # ProxyHandler({}) ignores HTTP(S)_PROXY: a proxy would connect past the guard.
+    return urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), _GuardedHTTPHandler, _GuardedHTTPSHandler, _CheckedRedirects)
+
+
+_OPENER = _opener()
 
 
 def get(url, timeout=60):
-    # shortcut: checks the address before connecting, so a DNS answer that changes
-    # between check and connect gets through; upgrade to cited's connect-time guard if this runs server-side.
     check_url(url)
     return _OPENER.open(urllib.request.Request(url, headers=UA), timeout=timeout).read()
 
@@ -330,6 +390,13 @@ def flatten_transcript(url):
 
 def main():
     a = sys.argv[1:]
+    if "--use-proxy" in a:
+        a.remove("--use-proxy")
+        global _OPENER
+        _OPENER = _opener(use_proxy=True)
+    elif any(urllib.request.getproxies().get(s) for s in ("http", "https")):
+        print("note: HTTP(S)_PROXY is set but not used. If fetches fail to resolve hosts, re-run with "
+              "--use-proxy (the address check is weaker through a proxy).", file=sys.stderr)
     if not a:
         sys.exit(__doc__)
     name = a[a.index("--name") + 1] if "--name" in a else None
