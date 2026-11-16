@@ -5,6 +5,7 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+- Fixed: `plugins/podcast/resolve.py` checked a host's addresses and then let `http.client` look the host up again to connect, so a DNS answer that changed in between (rebinding) could reach a loopback or internal service and land in `--download`. It now connects only to the addresses it checked. HTTP(S)_PROXY is ignored unless you pass `--use-proxy`, since a proxy connects past that check; the script says so when a proxy is set but unused.
 - Added tests for `ideation`'s `ledger.py` (duplicate proposals, status filter, invalid status). `research-suite` and `signal-outreach`'s skill text remain untested.
 
 ## 1.0.2 (2026-11-02)

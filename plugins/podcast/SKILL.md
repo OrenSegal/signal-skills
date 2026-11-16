@@ -120,6 +120,9 @@ Don't hand-roll curl pipelines; don't hardcode a feed.
 python3 SKILL_DIR/resolve.py "<url-or-show-name>" --limit 12 --download tx/
 ```
 
+If it prints that a proxy is set but not used and fetches fail to resolve
+hosts, the machine has no direct route out: add `--use-proxy`.
+
 Accepts an Apple URL, a direct RSS URL, a bare show name, a YouTube URL,
 or a Spotify URL together with `--name "<show name>"`. Prints the feed, marks the `?i=` target episode, lists
 which episodes have transcripts, and with `--download` writes flattened

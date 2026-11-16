@@ -263,6 +263,37 @@ class FetchGuard(unittest.TestCase):
         self.assertEqual(manifest, [])
         self.assertIn("FAIL", out.getvalue())
 
+    def test_connection_goes_to_the_address_that_was_checked(self):
+        # Rebinding: public when check_url looks, loopback on the next lookup.
+        answers = iter(["93.184.215.14", "127.0.0.1"])
+        real = socket.getaddrinfo
+
+        def rebinding(host, port, *args, **kwargs):
+            if host == "rebind.test":
+                return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (next(answers), port))]
+            return real(host, port, *args, **kwargs)
+
+        with mock.patch.object(socket, "getaddrinfo", rebinding), self.assertRaises(resolve.BlockedURL):
+            resolve.get(f"http://rebind.test:{self.port}/")
+        self.assertEqual(sum(self.hits.values()), 0)
+
+    def test_a_proxy_in_the_environment_is_not_used_without_the_flag(self):
+        # A proxy connects past the connect-time check, so it has to be asked for.
+        proxy = f"http://127.0.0.1:{self.port}"
+        with mock.patch.dict(os.environ, {"http_proxy": proxy, "https_proxy": proxy}):
+            fresh = load("podcast", "resolve.py")
+        connected = []
+
+        def connect(_sock, sockaddr):
+            connected.append(sockaddr[0])
+            raise OSError("no network in tests")
+
+        with self.fake_dns("public.test", "93.184.215.14"), \
+                mock.patch.object(socket.socket, "connect", connect), self.assertRaises(OSError):
+            fresh.get(f"http://public.test:{self.port}/")
+        self.assertEqual(connected, ["93.184.215.14"])
+        self.assertEqual(sum(self.hits.values()), 0)
+
     def test_public_address_passes_the_check(self):
         with self.fake_dns("public.test", "93.184.215.14"):
             resolve.check_url("https://public.test/feed.xml")
