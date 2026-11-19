@@ -7,20 +7,27 @@
   },
   "files": [
     "bin",
-    "plugins"
+    "plugins",
+    "!**/__pycache__"
   ],
   "license": "MIT",
   "author": "Oren Segal",
+  "homepage": "https://github.com/OrenSegal/signal-skills#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/OrenSegal/signal-skills"
+  },
+  "bugs": {
+    "url": "https://github.com/OrenSegal/signal-skills/issues"
   },
   "keywords": [
     "claude",
     "claude-code",
     "claude-code-skill",
     "podcast",
-    "plugin"
+    "plugin",
+    "agent-skills",
+    "codex-cli"
   ],
   "engines": {
     "node": ">=18"

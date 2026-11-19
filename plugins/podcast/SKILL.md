@@ -5,7 +5,7 @@ metadata:
   openclaw:
     homepage: https://github.com/OrenSegal/signal-skills
     requires:
-      bins: [python3]
+      bins: [python3, yt-dlp]
 ---
 
 **Paths.** `SKILL_DIR` in the commands below is the folder that holds this file and its scripts. On Claude Code it is `${CLAUDE_SKILL_DIR}`. If that still reads as a variable name, your host does not fill it in: use the folder this file was loaded from (for Codex, `~/.agents/skills/podcast`). Put the real path in place of `SKILL_DIR` when you run a command.
