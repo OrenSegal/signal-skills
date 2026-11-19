@@ -42,6 +42,9 @@ class ScoreboardReport(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Show One: 1/2 calls confirmed", md.read_text())
         self.assertIn("50%", html.read_text())
+        # exactly 50% sits in the 50-79% band, not "Overconfident"
+        self.assertIn("## Solid track record", md.read_text())
+        self.assertNotIn("Overconfident", md.read_text())
 
     def test_em_dash_in_a_show_name_or_prediction_does_not_block_the_report(self):
         # Show names and quoted predictions are data from the ledger, not copy the

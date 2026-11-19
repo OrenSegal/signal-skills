@@ -400,3 +400,32 @@ class AtomicSave(IsolatedState):
             ledger.save_json(path, {"show": "Show", "episodes": {"ep1": {}, "ep2": object()}})
         self.assertEqual(ledger.load_json(path, None), {"show": "Show", "episodes": {"ep1": {}}})
         self.assertEqual([p.name for p in path.parent.iterdir()], ["show.json"])
+
+
+class Boundaries(IsolatedState):
+    """Pin the edges: a prediction exactly --min-weeks old is gradeable, one
+    exactly --weeks old is not yet stale, and a dedup score equal to the
+    threshold counts."""
+
+    def write_pred(self, weeks_old):
+        made_at = (datetime.date.today() - datetime.timedelta(weeks=weeks_old)).isoformat()
+        self.write_show("show-a", {"show": "Show A", "episodes": {"ep1": {"predictions": [
+            {"text": "edge prediction", "status": "open", "made_at": made_at, "checked_at": None}]}}})
+
+    def test_prediction_exactly_min_weeks_old_is_a_grade_candidate(self):
+        self.write_pred(2)
+        out = json.loads(self.run_cmd(ledger.cmd_grade_candidates, min_weeks=2, limit=10))
+        self.assertEqual([p["text"] for p in out], ["edge prediction"])
+
+    def test_prediction_exactly_weeks_old_is_not_stale_yet(self):
+        self.write_pred(8)
+        self.assertEqual(json.loads(self.run_cmd(ledger.cmd_stale_sweep, weeks=8, show=None, dry_run=True)), [])
+
+    def test_dedup_score_equal_to_the_threshold_is_reported(self):
+        # 2 of 4 keywords shared: score exactly 0.5
+        self.write_show("show-a", {"show": "Show A", "episodes": {"e": {"predictions": [
+            {"text": "pricing agents alpha beta", "status": "open", "made_at": "2026-01-01"}]}}})
+        self.write_show("show-b", {"show": "Show B", "episodes": {"e": {"predictions": [
+            {"text": "pricing agents gamma delta", "status": "open", "made_at": "2026-01-01"}]}}})
+        out = json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5))
+        self.assertEqual([p["score"] for p in out], [0.5])

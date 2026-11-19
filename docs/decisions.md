@@ -18,7 +18,7 @@ Three decisions behind the repo's shape. Where the reasoning was not written dow
 
 **Context.** b284062 added a litmus suite copied from another repo. Its fixtures described the separate signal-scout prospect finder, and CI graded hand-written outputs against a baseline without running any skill.
 
-**Decision.** Removed it (#1). Only deterministic code is tested: ledgers, resolvers, the report renderer and the outreach generator, 79 unittest cases.
+**Decision.** Removed it (#1). Only deterministic code is tested: ledgers, resolvers, the report renderer and the outreach generator (79 unittest cases at the time).
 
 **Alternatives considered.** Keeping the suite with a relabelled name, as signal-scout did: not chosen here because the fixtures graded a different skill. Recording real LLM runs: not done; it costs API usage and varies between runs.
 

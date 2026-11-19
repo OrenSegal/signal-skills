@@ -151,6 +151,20 @@ class FetchIos(unittest.TestCase):
             resolve.fetch_ios("999", "us", 5, Path(tmp.name))
         self.assertEqual(json.loads((Path(tmp.name) / "ios-999-manifest.json").read_text())["count"], 0)
 
+    def test_app_metadata_entry_is_not_counted_as_a_review(self):
+        # Apple puts the app's own entry (no im:rating) first on page 1.
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        meta = {"id": {"label": "999"}, "title": {"label": "The App"}, "im:name": {"label": "The App"}}
+        pages = [{"feed": {"entry": [meta, *SAMPLE_FEED["feed"]["entry"]]}}, {"feed": {}}]
+        response = lambda body: type("R", (), {"__enter__": lambda s: s, "__exit__": lambda s, *a: False,  # noqa: E731
+                                               "read": lambda s: json.dumps(body).encode("utf-8")})()
+        with patch.object(resolve.urllib.request, "urlopen", side_effect=lambda url, timeout=15: response(pages.pop(0))), \
+                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            resolve.fetch_ios("999", "us", 5, Path(tmp.name))
+        self.assertEqual(json.loads((Path(tmp.name) / "ios-999-manifest.json").read_text())["count"], 2)
+        self.assertNotIn("The App", (Path(tmp.name) / "ios-999.txt").read_text())
+
     def test_app_id_and_country_are_validated_before_any_fetch(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)

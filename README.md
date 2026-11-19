@@ -56,7 +56,7 @@ Both committed examples are hand-written inputs run through the real renderers, 
 
 ## Limitations
 
-- **The LLM steps are untested.** The 145 unittest cases cover ledgers, URL resolvers, dedup and scoreboard math, the two renderers, and that every script subcommand the skill docs name exists. What a skill extracts, ranks or proposes has no automated check and no measured quality.
+- **The LLM steps are untested.** The 154 unittest cases cover ledgers, URL resolvers, dedup and scoreboard math, the two renderers, the installer, and that every script subcommand the skill docs name exists. What a skill extracts, ranks or proposes has no automated check and no measured quality.
 - **No real-run examples.** See above; the examples show the renderers, not the mining.
 - **Narrow review coverage.** Android reviews need a service account and work only for an app you own.
 

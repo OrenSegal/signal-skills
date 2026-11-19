@@ -450,3 +450,19 @@ class CommandLine(unittest.TestCase):
         with self.assertRaises(SystemExit) as ctx:
             self.run_main()
         self.assertIn("Resolve any podcast URL", str(ctx.exception))
+
+
+class RedirectCheck(unittest.TestCase):
+    """With --use-proxy the proxy opens the connection, so the redirect check
+    is the only thing between a hostile redirect and a local address."""
+
+    def test_redirect_handler_refuses_a_local_target_on_its_own(self):
+        handler = resolve._CheckedRedirects()
+        req = resolve.urllib.request.Request("https://public.example/feed.xml")
+        for target in ("http://127.0.0.1/secret", "http://169.254.169.254/latest/meta-data/", "file:///etc/hosts"):
+            with self.assertRaises(resolve.BlockedURL, msg=target):
+                handler.redirect_request(req, None, 302, "Found", {}, target)
+
+    def test_proxy_opener_keeps_the_redirect_check(self):
+        opener = resolve._opener(use_proxy=True)
+        self.assertTrue(any(isinstance(h, resolve._CheckedRedirects) for h in opener.handlers))
