@@ -303,3 +303,54 @@ class FetchGuard(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _feed(n):
+    """A feed of n episodes, newest first: 'Episode n' down to 'Episode 1'."""
+    items = "".join(
+        f"<item><title>Episode {i}</title><pubDate>Mon, 05 Jan 2026 00:00:00 GMT</pubDate>"
+        f'<podcast:transcript url="https://example.com/ep{i}.vtt" type="text/vtt" /></item>'
+        for i in range(n, 0, -1))
+    return (f'<rss xmlns:podcast="https://podcastindex.org/namespace/1.0"><channel>'
+            f"<title>Test Show</title>{items}</channel></rss>").encode()
+
+
+class TargetEpisode(unittest.TestCase):
+    """An Apple `?i=` link names one episode. It must be in the result even
+    when it is older than the newest --limit episodes."""
+
+    def test_target_older_than_the_limit_is_still_returned(self):
+        eps = resolve.parse_feed(_feed(30), limit=12, target="Episode 3")
+        self.assertEqual(len(eps), 13)
+        self.assertEqual([e["title"] for e in eps[:12]], [f"Episode {i}" for i in range(30, 18, -1)])
+        self.assertEqual(eps[-1]["title"], "Episode 3")
+
+    def test_target_inside_the_limit_is_not_duplicated(self):
+        eps = resolve.parse_feed(_feed(30), limit=12, target="Episode 25")
+        self.assertEqual(len(eps), 12)
+
+    def test_title_match_ignores_case_and_spacing(self):
+        eps = resolve.parse_feed(_feed(30), limit=2, target="  episode   3 ")
+        self.assertEqual(eps[-1]["title"], "Episode 3")
+
+    def run_main(self, target_title):
+        out = io.StringIO()
+        with mock.patch.object(resolve, "get", lambda url, timeout=60: _feed(30)), \
+                mock.patch.object(resolve, "resolve_source",
+                                  lambda src, name=None: ("https://feeds.example.com/f.xml", "1", "2", "Test Show")), \
+                mock.patch.object(resolve, "episode_title_for_id", lambda show_id, ep_id: target_title), \
+                mock.patch.object(sys, "argv", ["resolve.py", "https://podcasts.apple.com/us/podcast/x/id1?i=2"]), \
+                redirect_stdout(out):
+            resolve.main()
+        return out.getvalue()
+
+    def test_main_marks_a_target_older_than_the_limit(self):
+        out = self.run_main("Episode 3")
+        target_lines = [line for line in out.splitlines() if "<<< TARGET" in line]
+        self.assertEqual(len(target_lines), 1, out)
+        self.assertIn("Episode 3", target_lines[0])
+
+    def test_main_says_so_when_the_target_is_not_in_the_feed(self):
+        out = self.run_main("An episode the feed dropped")
+        self.assertNotIn("<<< TARGET", out)
+        self.assertIn("is not in the feed", out)

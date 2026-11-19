@@ -352,7 +352,15 @@ def episode_title_for_id(show_id, ep_id):
     return None
 
 
-def parse_feed(xml_bytes, limit):
+def same_title(a, b):
+    """iTunes and the feed can differ in case and spacing for the same episode."""
+    return bool(a and b) and " ".join(a.split()).casefold() == " ".join(b.split()).casefold()
+
+
+def parse_feed(xml_bytes, limit, target=None):
+    """The newest `limit` episodes. If `target` (an episode title) is older
+    than those, it is appended, so an `?i=` link to an old episode still
+    returns the episode the user asked for."""
     try:
         root = ET.fromstring(xml_bytes)
     except ET.ParseError as ex:
@@ -360,14 +368,22 @@ def parse_feed(xml_bytes, limit):
     ch = root.find("channel")
     if ch is None:
         raise NotAFeed(f"root element is <{root.tag.rsplit('}', 1)[-1]}>, not an RSS <rss><channel>")
-    out = []
-    for it in ch.findall("item")[:limit]:
+
+    def episode(it):
         tr = it.find("podcast:transcript", PNS)
-        out.append({
+        return {
             "title": (it.findtext("title") or "").strip(),
             "date": (it.findtext("pubDate") or "")[:16],
             "transcript": tr.get("url") if tr is not None else None,
-        })
+        }
+
+    items = ch.findall("item")
+    out = [episode(it) for it in items[:limit]]
+    if target and not any(same_title(e["title"], target) for e in out):
+        for it in items[limit:]:
+            if same_title(it.findtext("title"), target):
+                out.append(episode(it))
+                break
     return out
 
 
@@ -416,15 +432,17 @@ def main():
         print(f"episode i={ep_id} -> {target or 'UNRESOLVED (falling back to newest)'}")
 
     try:
-        eps = parse_feed(get(feed), limit)
+        eps = parse_feed(get(feed), limit, target)
     except BlockedURL as ex:
         sys.exit(f"Refused to fetch the feed: {ex}")
     except NotAFeed as ex:
         sys.exit(f"{feed} is not an RSS podcast feed ({ex}). Pass the show's RSS URL, its Apple Podcasts URL, or its name.")
     have = sum(1 for e in eps if e["transcript"])
     print(f"episodes: {len(eps)} shown, {have} with embedded transcripts\n")
+    if target and not any(same_title(e["title"], target) for e in eps):
+        print(f"! The linked episode ({target!r}) is not in the feed; the episodes below are the newest, not that one.")
     for i, e in enumerate(eps):
-        mark = "<<< TARGET" if target and e["title"] == target else ""
+        mark = "<<< TARGET" if same_title(e["title"], target) else ""
         print(f"{i:2} {'OK ' if e['transcript'] else '-- '} {e['date']} | {e['title'][:64]} {mark}")
 
     if not have:
@@ -447,7 +465,7 @@ def main():
                 open(p, "w").write(t)
                 man.append({"title": e["title"], "date": e["date"],
                             "path": os.path.abspath(p), "words": len(t.split()),
-                            "target": bool(target and e["title"] == target)})
+                            "target": same_title(e["title"], target)})
                 print(f"  {len(t.split()):6d}w -> {p}")
             except Exception as ex:
                 print(f"  FAIL {e['title'][:40]}: {ex}")
