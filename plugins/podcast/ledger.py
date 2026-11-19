@@ -141,6 +141,10 @@ def cmd_mined(args):
     print(json.dumps(sorted(show["episodes"].keys())))
 
 
+def _pred_key(text):
+    return " ".join(str(text).split()).casefold()
+
+
 def cmd_record(args):
     """Record one mined episode: findings + any predictions made.
 
@@ -153,15 +157,17 @@ def cmd_record(args):
     slug = slugify(args.show)
     show = load_show(slug)
     raw_preds = json.loads(args.predictions_json) if args.predictions_json else []
+    # Recording an episode again (a re-mine, a retried run) keeps what was
+    # already graded: a prediction with the same text carries its outcome over.
+    earlier = {_pred_key(p["text"]): p
+               for p in show["episodes"].get(args.episode, {}).get("predictions", [])}
     preds = []
     for p in raw_preds:
-        if isinstance(p, str):
-            preds.append({"text": p, "speaker": None, "status": "open",
-                          "made_at": today(), "checked_at": None, "source_url": None})
-        else:
-            preds.append({"text": p["text"], "speaker": p.get("speaker"),
-                          "status": "open", "made_at": today(), "checked_at": None,
-                          "source_url": None})
+        text, speaker = (p, None) if isinstance(p, str) else (p["text"], p.get("speaker"))
+        old = earlier.get(_pred_key(text), {})
+        preds.append({"text": text, "speaker": speaker or old.get("speaker"),
+                      "status": old.get("status", "open"), "made_at": old.get("made_at") or today(),
+                      "checked_at": old.get("checked_at"), "source_url": old.get("source_url")})
     findings = json.loads(args.findings_json) if args.findings_json else []
     show["episodes"][args.episode] = {
         "date": iso_date(args.date),

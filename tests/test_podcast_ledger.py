@@ -363,6 +363,35 @@ class EpisodeDates(IsolatedState):
         self.assertEqual([f["date"] for f in self.query(since="2026-01-01")], ["2026-07-10"])
 
 
+class ReRecord(IsolatedState):
+    """Recording an episode a second time (a re-mine, or a retry after a
+    failed run) must not throw away what was already graded."""
+
+    def record(self, predictions):
+        self.run_cmd(ledger.cmd_record, show="Show", episode="ep1", date="2026-01-05", findings_path="",
+                     findings_json="[]", predictions_json=json.dumps(predictions))
+
+    def test_resolved_prediction_keeps_its_status_and_evidence(self):
+        self.record(["prices fall by half", {"text": "agents replace forms", "speaker": "Guest"}])
+        self.run_cmd(ledger.cmd_check_prediction, show="Show", episode="ep1", text="prices",
+                     status="confirmed", source_url="https://example.com/evidence")
+        ledger.load_show("show")  # sanity: file is readable
+        self.record(["Prices fall by half ", {"text": "agents replace forms", "speaker": "Guest"}, "a new call"])
+        preds = {p["text"].strip().lower(): p for p in ledger.load_show("show")["episodes"]["ep1"]["predictions"]}
+        kept = preds["prices fall by half"]
+        self.assertEqual((kept["status"], kept["source_url"]), ("confirmed", "https://example.com/evidence"))
+        self.assertIsNotNone(kept["checked_at"])
+        self.assertEqual(preds["agents replace forms"]["status"], "open")
+        self.assertEqual(preds["a new call"]["status"], "open")
+
+    def test_made_at_survives_a_re_record(self):
+        self.write_show("show", {"show": "Show", "episodes": {"ep1": {"date": "2026-01-05", "predictions": [
+            {"text": "prices fall by half", "speaker": None, "status": "open", "made_at": "2026-01-06",
+             "checked_at": None, "source_url": None}]}}})
+        self.record(["prices fall by half"])
+        self.assertEqual(ledger.load_show("show")["episodes"]["ep1"]["predictions"][0]["made_at"], "2026-01-06")
+
+
 class AtomicSave(IsolatedState):
     def test_a_failed_write_leaves_the_previous_file_intact(self):
         path = ledger.show_path("show")
