@@ -36,8 +36,8 @@ Payload schema (JSON):
     {
       "label": "<short tier meaning, e.g. 'Ship before the deadline'>",
       "name": "<tier display name>",
-      "rank": 5,       // filled bars, 1-5
-      "of": 5,          // total bars, usually 5
+      "rank": 5,       // filled bars, 1..of; optional (item count, capped at "of")
+      "of": 5,          // total bars; optional, default 5
       "color": "sig",   // sig | mid | alert | off
       "items": [
         {
@@ -246,7 +246,25 @@ def render_bars(rank, of, color):
     )
 
 
+def tier_bars(tier, tier_index=None):
+    """(rank, of) for a tier's signal bars. `of` defaults to 5 and `rank` to
+    the item count, capped at `of`. Raises PayloadError unless both are whole
+    numbers with 1 <= rank <= of."""
+    where = "tier" if tier_index is None else f"tier {tier_index}"
+    of = tier.get("of", 5)
+    if isinstance(of, bool) or not isinstance(of, int) or of < 1:
+        raise PayloadError(f"{where} 'of' must be a whole number of at least 1, got {of!r}")
+    rank = tier.get("rank", min(len(tier["items"]), of))
+    if isinstance(rank, bool) or not isinstance(rank, int):
+        raise PayloadError(f"{where} 'rank' must be a whole number, got {rank!r}")
+    if not (1 <= rank <= of):
+        raise PayloadError(f"{where} bar rank {rank} out of range for 'of' {of}")
+    return rank, of
+
+
 def validate_item(item, tier_index, item_index):
+    if not isinstance(item, dict):
+        raise PayloadError(f"tier {tier_index} item {item_index} must be an object, got {type(item).__name__}")
     for field in ("claim", "tag", "reasoning", "source"):
         if field not in item:
             raise PayloadError(f"tier {tier_index} item {item_index} missing '{field}'")
@@ -264,11 +282,15 @@ def validate_item(item, tier_index, item_index):
 
 
 def validate_tier(tier, tier_index):
+    if not isinstance(tier, dict):
+        raise PayloadError(f"tier {tier_index} must be an object, got {type(tier).__name__}")
     for field in ("label", "name", "items"):
         if field not in tier:
             raise PayloadError(f"tier {tier_index} missing '{field}'")
     check_no_em_dash(tier["label"], f"tiers[{tier_index}].label")
     check_no_em_dash(tier["name"], f"tiers[{tier_index}].name")
+    if not isinstance(tier["items"], list):
+        raise PayloadError(f"tier {tier_index} 'items' must be a list, got {type(tier['items']).__name__}")
     if not tier["items"]:
         raise PayloadError(
             f"tier {tier_index} ({tier['name']!r}) has zero items; "
@@ -277,16 +299,21 @@ def validate_tier(tier, tier_index):
     color = tier.get("color", "sig")
     if color not in VALID_COLORS:
         raise PayloadError(f"tier {tier_index} invalid color {color!r}")
+    tier_bars(tier, tier_index)
     for i, item in enumerate(tier["items"]):
         validate_item(item, tier_index, i)
 
 
 def validate_payload(payload):
+    if not isinstance(payload, dict):
+        raise PayloadError(f"payload must be a JSON object, got {type(payload).__name__}")
     for field in ("title", "eyebrow", "headline", "query", "tiers"):
         if field not in payload:
             raise PayloadError(f"payload missing required field '{field}'")
-    for field in ("title", "eyebrow", "headline", "query"):
-        check_no_em_dash(payload[field], field)
+    for field in ("title", "eyebrow", "headline", "query", "footer_left", "footer_right"):
+        check_no_em_dash(payload.get(field), field)
+    if not isinstance(payload["tiers"], list):
+        raise PayloadError(f"payload 'tiers' must be a list, got {type(payload['tiers']).__name__}")
     if not payload["tiers"]:
         raise PayloadError("payload has zero tiers")
     for i, tier in enumerate(payload["tiers"]):
@@ -308,8 +335,7 @@ def render_item(item):
 
 def render_tier(tier):
     color = tier.get("color", "sig")
-    rank = tier.get("rank", len(tier["items"]))
-    of = tier.get("of", 5)
+    rank, of = tier_bars(tier)
     bars = render_bars(rank, of, color)
     items_html = "\n".join(render_item(item) for item in tier["items"])
     return f"""  <div class="tier-head">

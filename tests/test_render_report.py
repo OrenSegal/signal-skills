@@ -112,6 +112,62 @@ class ValidatePayload(unittest.TestCase):
             rr.validate_payload(payload)
 
 
+class MalformedPayload(unittest.TestCase):
+    """The payload is written by a model. A wrong shape must come back as a
+    PayloadError that names the field, never as a Python traceback."""
+
+    def tier(self, **overrides):
+        tier = make_payload()["tiers"][0]
+        tier.update(overrides)
+        return make_payload(tiers=[tier])
+
+    def assert_payload_error(self, payload, *needles):
+        for render in (rr.render, rr.render_text):
+            with self.assertRaises(rr.PayloadError) as ctx:
+                render(payload)
+            for needle in needles:
+                self.assertIn(needle, str(ctx.exception))
+
+    def test_payload_that_is_not_an_object(self):
+        self.assert_payload_error([make_payload()], "object")
+
+    def test_tiers_that_is_not_a_list(self):
+        self.assert_payload_error(make_payload(tiers={"a": 1}), "tiers", "list")
+
+    def test_tier_that_is_not_an_object(self):
+        self.assert_payload_error(make_payload(tiers=["Do now"]), "tier 0", "object")
+
+    def test_items_that_is_not_a_list(self):
+        self.assert_payload_error(self.tier(items={"claim": "x"}), "tier 0", "items", "list")
+
+    def test_item_that_is_not_an_object(self):
+        self.assert_payload_error(self.tier(items=["Users want CSV export"]), "tier 0 item 0", "object")
+
+    def test_rank_that_is_not_a_whole_number(self):
+        for bad in ("5", 2.5, None, True):
+            self.assert_payload_error(self.tier(rank=bad), "tier 0", "rank")
+
+    def test_of_that_is_not_a_whole_number(self):
+        self.assert_payload_error(self.tier(of="5"), "tier 0", "of")
+
+    def test_rank_out_of_range_is_caught_by_validation(self):
+        with self.assertRaises(rr.PayloadError):
+            rr.validate_payload(self.tier(rank=6, of=5))
+
+    def test_missing_rank_does_not_fail_a_tier_with_many_items(self):
+        # The default used to be the item count, so a sixth item in a tier with
+        # no rank failed with "rank 6 out of range", which names nothing the
+        # author wrote.
+        tier = make_payload()["tiers"][0]
+        del tier["rank"]
+        tier["items"] = tier["items"] * 7
+        html = rr.render(make_payload(tiers=[tier]))
+        self.assertEqual(html.count('<i class="on"></i>'), 5)
+
+    def test_em_dash_in_a_footer_raises(self):
+        self.assert_payload_error(make_payload(footer_left="state \u2014 show.json"), "footer_left")
+
+
 class Render(unittest.TestCase):
     def test_render_escapes_html_and_includes_content(self):
         payload = make_payload()
