@@ -19,6 +19,7 @@ then renders it exactly like any other report in this skill family.
 """
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -37,6 +38,13 @@ TIER_BANDS = [
     (0.0, "Overconfident", "Under 50% of tested predictions confirmed", "alert"),
 ]
 UNRATED = ("Too early to grade", "No tested predictions yet (still open or stale only)", "off")
+
+
+def _plain(text):
+    """Show names, speakers and quoted predictions come from the ledger as
+    recorded. render_report.py refuses an em dash anywhere (a rule for copy
+    the agent writes), so swap it for a comma instead of failing the report."""
+    return re.sub(r"\s*\u2014\s*", ", ", str(text))
 
 
 def _run_ledger(*args):
@@ -61,9 +69,9 @@ def _examples(preds, key, by_guest):
     failed = next((p for p in preds if p.get(field) == key and p["status"] == "failed"), None)
     bits = []
     if confirmed:
-        bits.append(f"Right: \"{confirmed['text']}\" ({confirmed['show']}).")
+        bits.append(_plain(f"Right: \"{confirmed['text']}\" ({confirmed['show']})."))
     if failed:
-        bits.append(f"Wrong: \"{failed['text']}\" ({failed['show']}).")
+        bits.append(_plain(f"Wrong: \"{failed['text']}\" ({failed['show']})."))
     return " ".join(bits) if bits else "No individually-cited example on record yet."
 
 
@@ -81,8 +89,8 @@ def build_payload(by_guest, min_tested):
         tier = tiers.setdefault(name, {"name": name, "label": label, "color": color, "items": []})
         rate_pct = f"{round(row['hit_rate'] * 100)}%" if row["hit_rate"] is not None else "unrated"
         tier["items"].append({
-            "claim": f"{row[key_field]}: {row['confirmed']}/{tested} calls confirmed" if tested
-                     else f"{row[key_field]}: no resolved predictions yet",
+            "claim": f"{_plain(row[key_field])}: {row['confirmed']}/{tested} calls confirmed" if tested
+                     else f"{_plain(row[key_field])}: no resolved predictions yet",
             "tag": rate_pct,
             "tag_class": color,
             "reasoning": _examples(preds, row[key_field], by_guest),
@@ -109,8 +117,8 @@ def build_payload(by_guest, min_tested):
         "headline": "Who's actually been right, graded against their own predictions",
         "query": f"Every {scope[:-1]} with a tracked prediction, ranked by confirmed hit rate, not by follower count or vibes.",
         "tiers": payload_tiers,
-        "footer_left": str(STATE_DIR),
-        "footer_right": str(LEDGER),
+        "footer_left": _plain(STATE_DIR),
+        "footer_right": _plain(LEDGER),
     }
 
 
