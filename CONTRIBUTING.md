@@ -28,8 +28,9 @@ External network calls (iTunes/App Store fetches, yt-dlp subprocess calls)
 are stubbed in tests; the parsing/scoring logic they feed is exercised for
 real.
 
-CI (`.github/workflows/check-shared-files.yml`) runs this suite on every
-push and pull request, alongside the existing shared-file drift check.
+CI (`.github/workflows/check-shared-files.yml`) runs this suite on Python
+3.10 and 3.13 on every push and pull request, alongside the shared-file
+drift check, `ruff check .` and `node --check bin/install.js`.
 
 ## Editing the shared report renderer
 
