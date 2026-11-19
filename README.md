@@ -150,7 +150,7 @@ bin/install.js            installer script, installs into Claude Code and/or Cod
 
 `plugins/signal-report` holds the single authored copy of `render_report.py` and `template.html`. `podcast`, `review-scout`, and `ideation` each ship a generated copy of those two files instead of a symlink or runtime import. The reason: `/plugin install <name>@oren-signal-skills` fetches only that plugin's directory, so a cross-plugin reference resolves to nothing (this broke once).
 
-After editing the `signal-report` source, run `scripts/sync-shared-files.sh` to regenerate the three copies. CI runs `scripts/sync-shared-files.sh --check` so a hand-edited copy can't drift unnoticed.
+After editing the `signal-report` source, run `scripts/sync-shared-files.sh` to regenerate the three copies. CI runs `scripts/sync-shared-files.sh --check` so a hand-edited copy can't drift unnoticed. `analytics-check.md` works the same way: `plugins/podcast` holds the authored copy and `review-scout` ships a generated one.
 
 ## License
 

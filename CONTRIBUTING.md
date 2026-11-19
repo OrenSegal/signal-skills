@@ -44,6 +44,8 @@ source, run:
 ```
 
 to regenerate the three consumer copies, then commit all of them together.
+The same script copies `plugins/podcast/analytics-check.md` (the authored
+copy) to `review-scout`.
 `./scripts/sync-shared-files.sh --check` (what CI runs) fails if a consumer
 copy has drifted from the source.
 

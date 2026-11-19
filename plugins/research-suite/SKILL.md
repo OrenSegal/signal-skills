@@ -41,7 +41,7 @@ directly or say so.
   Mechanically enforces no-em-dash, required confidence tags, and
   theme-token safety — not manual-review rules anymore.
 - **`analytics-check.md`** — canonical copy lives in `podcast`;
-  `review-scout` symlinks it. Backend-agnostic cross-check contract
+  `review-scout` ships a generated copy (same sync script). Backend-agnostic cross-check contract
   (PostHog, Amplitude, Mixpanel, GA4), detected at runtime. `ideation`
   doesn't need its own copy — it reads already-cross-checked findings
   from the other two rather than querying analytics directly.
