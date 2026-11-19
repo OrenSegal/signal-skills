@@ -354,3 +354,19 @@ class TargetEpisode(unittest.TestCase):
         out = self.run_main("An episode the feed dropped")
         self.assertNotIn("<<< TARGET", out)
         self.assertIn("is not in the feed", out)
+
+
+class FeedDates(unittest.TestCase):
+    """Dates leave resolve.py as YYYY-MM-DD, the form the YouTube path already
+    used and the form `ledger.py query --since` compares against."""
+
+    def test_pubdate_becomes_an_iso_date(self):
+        eps = resolve.parse_feed(SAMPLE_RSS.encode("utf-8"), limit=10)
+        self.assertEqual([e["date"] for e in eps], ["2026-01-05", "2026-01-12"])
+
+    def test_unparseable_pubdate_is_kept_as_written(self):
+        feed = b"<rss><channel><item><title>x</title><pubDate>early 2026</pubDate></item></channel></rss>"
+        self.assertEqual(resolve.parse_feed(feed, 5)[0]["date"], "early 2026")
+
+    def test_missing_pubdate_is_empty(self):
+        self.assertEqual(resolve.parse_feed(b"<rss><channel><item><title>x</title></item></channel></rss>", 5)[0]["date"], "")

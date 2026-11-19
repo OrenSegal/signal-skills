@@ -25,6 +25,8 @@ manual subs if present). No podcast:transcript tag equivalent exists, so
 `have` transcript count reflects whichever videos actually have an en/en-orig
 caption track — some videos (esp. very new ones) may have none yet.
 """
+import datetime
+import email.utils
 import http.client
 import ipaddress
 import json
@@ -182,6 +184,28 @@ def get(url, timeout=60):
 
 def itunes(params):
     return json.loads(get("https://itunes.apple.com/" + params).decode("utf-8", "replace"))
+
+
+_DATE_FORMATS = ("%a, %d %b %Y", "%d %b %Y", "%Y%m%d")
+
+
+def iso_date(text):
+    """YYYY-MM-DD for an ISO or RSS (RFC 822) date; the text itself when it
+    is neither. Dates are compared and sorted as strings, so they must share
+    one form."""
+    text = " ".join((text or "").split())
+    if re.match(r"\d{4}-\d{2}-\d{2}(\D|$)", text):
+        return text[:10]
+    try:
+        return email.utils.parsedate_to_datetime(text).date().isoformat()
+    except (TypeError, ValueError):
+        pass
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return text
 
 
 class NotAFeed(Exception):
@@ -373,7 +397,7 @@ def parse_feed(xml_bytes, limit, target=None):
         tr = it.find("podcast:transcript", PNS)
         return {
             "title": (it.findtext("title") or "").strip(),
-            "date": (it.findtext("pubDate") or "")[:16],
+            "date": iso_date(it.findtext("pubDate")),
             "transcript": tr.get("url") if tr is not None else None,
         }
 

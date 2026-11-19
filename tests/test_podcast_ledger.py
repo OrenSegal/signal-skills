@@ -321,3 +321,43 @@ class StateLocationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EpisodeDates(IsolatedState):
+    """resolve.py used to hand back RSS dates ("Mon, 03 Nov 2025"), and the
+    ledger stored whatever it was given. `query --since` and the newest-first
+    sort compare dates as strings, so they need ISO dates on both sides."""
+
+    def record(self, episode, date):
+        self.run_cmd(ledger.cmd_record, show="Show", episode=episode, date=date, findings_path="",
+                     findings_json=json.dumps([{"claim": episode, "tag": "measured", "topic": "pricing"}]),
+                     predictions_json="[]")
+
+    def query(self, since=None):
+        return json.loads(self.run_cmd(ledger.cmd_query, show=None, topic=None, tag=None, since=since))
+
+    def test_iso_date_normalizes_rss_and_iso_forms(self):
+        for raw in ("Mon, 03 Nov 2025", "Mon, 03 Nov 2025 09:30:00 GMT", "3 Nov 2025", "2025-11-03",
+                    "2025-11-03T09:30:00Z"):
+            self.assertEqual(ledger.iso_date(raw), "2025-11-03", raw)
+
+    def test_iso_date_leaves_unparseable_text_alone(self):
+        self.assertEqual(ledger.iso_date("sometime last fall"), "sometime last fall")
+        self.assertEqual(ledger.iso_date(""), "")
+
+    def test_record_stores_an_rss_date_as_iso(self):
+        self.record("old", "Mon, 03 Nov 2025")
+        self.assertEqual(ledger.load_show("show")["episodes"]["old"]["date"], "2025-11-03")
+
+    def test_since_excludes_an_older_episode_recorded_with_an_rss_date(self):
+        self.record("old", "Mon, 03 Nov 2025")
+        self.record("new", "Fri, 10 Jul 2026")
+        self.assertEqual([f["episode"] for f in self.query(since="2026-01-01")], ["new"])
+
+    def test_since_and_sort_work_on_rss_dates_already_in_a_state_file(self):
+        self.write_show("show", {"show": "Show", "episodes": {
+            "old": {"date": "Mon, 03 Nov 2025", "findings": [{"claim": "old", "tag": "measured", "topic": "x"}]},
+            "new": {"date": "Fri, 10 Jul 2026", "findings": [{"claim": "new", "tag": "measured", "topic": "x"}]},
+        }})
+        self.assertEqual([f["episode"] for f in self.query()], ["new", "old"])
+        self.assertEqual([f["date"] for f in self.query(since="2026-01-01")], ["2026-07-10"])

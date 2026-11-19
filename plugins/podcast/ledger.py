@@ -11,6 +11,7 @@ Layout:
 """
 import argparse
 import datetime
+import email.utils
 import json
 import os
 import re
@@ -88,6 +89,28 @@ def today():
     return datetime.date.today().isoformat()
 
 
+_DATE_FORMATS = ("%a, %d %b %Y", "%d %b %Y", "%Y%m%d")
+
+
+def iso_date(text):
+    """YYYY-MM-DD for an ISO or RSS (RFC 822) date; the text itself when it
+    is neither. Dates are compared and sorted as strings, so they must share
+    one form."""
+    text = " ".join((text or "").split())
+    if re.match(r"\d{4}-\d{2}-\d{2}(\D|$)", text):
+        return text[:10]
+    try:
+        return email.utils.parsedate_to_datetime(text).date().isoformat()
+    except (TypeError, ValueError):
+        pass
+    for fmt in _DATE_FORMATS:
+        try:
+            return datetime.datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return text
+
+
 # ---------------------------------------------------------------- config
 
 def cmd_config_get(args):
@@ -134,7 +157,7 @@ def cmd_record(args):
                           "source_url": None})
     findings = json.loads(args.findings_json) if args.findings_json else []
     show["episodes"][args.episode] = {
-        "date": args.date or "",
+        "date": iso_date(args.date),
         "mined_at": today(),
         "findings_path": args.findings_path or "",
         "findings": findings,
@@ -202,15 +225,15 @@ def cmd_query(args):
         if args.show and slugify(args.show) != slugify(show["show"]):
             continue
         for ep, data in show["episodes"].items():
-            if args.since and data.get("date", "") < args.since:
+            date = iso_date(data.get("date", ""))  # state written before dates were normalized
+            if args.since and date < iso_date(args.since):
                 continue
             for f in data.get("findings", []):
                 if args.topic and args.topic.lower() not in f.get("topic", "").lower():
                     continue
                 if args.tag and f.get("tag") != args.tag:
                     continue
-                out.append({"show": show["show"], "episode": ep,
-                            "date": data.get("date", ""), **f})
+                out.append({**f, "show": show["show"], "episode": ep, "date": date})
     out.sort(key=lambda f: f.get("date", ""), reverse=True)
     print(json.dumps(out, indent=2))
 

@@ -233,7 +233,7 @@ ledger). Ask each extractor to close its response with a fenced JSON block:
 {
   "episode": "<title>",
   "show": "<show name>",
-  "date": "<published date>",
+  "date": "<published date, YYYY-MM-DD as in manifest.json>",
   "findings": [
     {"claim": "...", "tag": "measured|anecdotal|speculative", "topic": "...", "speaker": "<optional>"}
   ],
