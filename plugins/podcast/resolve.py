@@ -237,6 +237,8 @@ def yt_dlp_json(url, extra=()):
         raw = subprocess.run(cmd, capture_output=True, check=True, timeout=60).stdout
     except FileNotFoundError:
         sys.exit("yt-dlp not found on PATH. Install with `brew install yt-dlp`.")
+    except subprocess.TimeoutExpired:
+        sys.exit(f"yt-dlp timed out after 60s listing {url}. Try again, or pass a smaller --limit.")
     except subprocess.CalledProcessError as ex:
         sys.exit(f"yt-dlp failed for {url}: {ex.stderr.decode('utf-8', 'replace')[:400]}")
     return json.loads(raw)
@@ -275,7 +277,10 @@ def yt_transcript(video_id, workdir):
         cmd = ["yt-dlp", "--skip-download", "--no-warnings", sub_flag,
                "--sub-lang", "en.*", "--sub-format", "vtt",
                "-o", base + ".%(ext)s", url]
-        subprocess.run(cmd, capture_output=True, timeout=120)
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=120)
+        except subprocess.TimeoutExpired:
+            return None  # reported as a failed episode; the rest of the batch goes on
         for fname in os.listdir(workdir):
             if fname.startswith(os.path.basename(base)) and fname.endswith(".vtt"):
                 path = os.path.join(workdir, fname)
@@ -314,7 +319,7 @@ def run_youtube(src, limit, dl):
         p = os.path.join(dl, f"{i:02d}-{slug}.txt")
         text = yt_transcript(v["id"], dl)
         if text is None:
-            print(f"  {i:2d} FAIL no en captions -> {v['title'][:40]}")
+            print(f"  {i:2d} FAIL no en captions (or yt-dlp timed out) -> {v['title'][:40]}")
             continue
         open(p, "w").write(text)
         man.append({"title": v["title"], "date": v["date"], "path": os.path.abspath(p),

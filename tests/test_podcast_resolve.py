@@ -370,3 +370,41 @@ class FeedDates(unittest.TestCase):
 
     def test_missing_pubdate_is_empty(self):
         self.assertEqual(resolve.parse_feed(b"<rss><channel><item><title>x</title></item></channel></rss>", 5)[0]["date"], "")
+
+
+class YouTubeTimeout(unittest.TestCase):
+    """One video whose captions hang must not cost the rest of the batch."""
+
+    def test_a_timed_out_video_is_reported_and_the_manifest_is_still_written(self):
+        import subprocess
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        videos = [{"id": "aaaaaaaaaaa", "title": "Slow one", "date": "2026-01-05"},
+                  {"id": "bbbbbbbbbbb", "title": "Fine one", "date": "2026-01-06"}]
+
+        def fake_run(cmd, **kwargs):
+            if "aaaaaaaaaaa" in cmd[-1]:
+                raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout"))
+            with open(os.path.join(tmp.name, "bbbbbbbbbbb.en.vtt"), "w") as f:
+                f.write("WEBVTT\n\n00:00:00.000 --> 00:00:01.000\nhello there\n")
+            return subprocess.CompletedProcess(cmd, 0, b"", b"")
+
+        out = io.StringIO()
+        with mock.patch.object(resolve, "yt_list_videos", lambda src, limit: videos), \
+                mock.patch.object(resolve.subprocess, "run", fake_run), redirect_stdout(out):
+            resolve.run_youtube("https://www.youtube.com/@handle", 2, tmp.name)
+        self.assertIn("FAIL", out.getvalue())
+        with open(os.path.join(tmp.name, "manifest.json")) as f:
+            manifest = json.load(f)
+        self.assertEqual([m["video_id"] for m in manifest], ["bbbbbbbbbbb"])
+
+    def test_a_timed_out_listing_exits_with_a_message(self):
+        import subprocess
+
+        def fake_run(cmd, **kwargs):
+            raise subprocess.TimeoutExpired(cmd, kwargs.get("timeout"))
+
+        with mock.patch.object(resolve.subprocess, "run", fake_run):
+            with self.assertRaises(SystemExit) as ctx:
+                resolve.yt_dlp_json("https://www.youtube.com/@handle")
+        self.assertIn("timed out", str(ctx.exception))
