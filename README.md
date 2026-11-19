@@ -39,7 +39,7 @@ Each mining run writes to a per-show or per-app ledger (`ledger.py`), so results
 - **Prediction scoreboard.** Falsifiable predictions made by guests are tracked and later resolved as confirmed, failed, or stale. `ledger.py scoreboard [--by-guest]` turns that into a hit-rate leaderboard showing which shows (or guests) turned out to be right over time.
 - **Watch shows on a schedule.** `ledger.py subscribe --show <url>` combined with a `schedule`-skill cron job gives you a digest of new episodes without having to ask.
 - **Web cross-checks.** Key claims and open predictions can be checked against independent sources on the open web (Claude Code's `WebSearch`). A confirmed prediction then carries a real citation, not just "a later episode agreed."
-- **Regression detection.** `review-scout` flags a complaint whose wording overlaps with something already marked fixed in an earlier app version.
+- **Regression detection.** `review-scout` records each batch's findings, and `ledger.py dedup` pairs a bug whose wording overlaps with one recorded for an earlier batch or version. It is a candidate list for the agent to judge; the ledger does not track which bugs were fixed.
 - **From findings to decisions.** `ideation` reads both mining skills' ledgers and proposes what to build, fix, or test next, citing the findings behind each proposal.
 - **Token use.** `podcast`'s SKILL.md tells the agent to batch extraction by transcript word count and run it on a cheaper model (such as Haiku), keeping synthesis and web-check judgment on the session model. Token use has not been measured. A deterministic script generates the report HTML, so the markup costs no tokens.
 
@@ -56,7 +56,7 @@ Both committed examples are hand-written inputs run through the real renderers, 
 
 ## Limitations
 
-- **The LLM steps are untested.** The 79 unittest cases cover ledgers, URL resolvers, dedup and scoreboard math, and the two renderers. What a skill extracts, ranks or proposes has no automated check and no measured quality.
+- **The LLM steps are untested.** The 138 unittest cases cover ledgers, URL resolvers, dedup and scoreboard math, the two renderers, and that every script subcommand the skill docs name exists. What a skill extracts, ranks or proposes has no automated check and no measured quality.
 - **No real-run examples.** See above; the examples show the renderers, not the mining.
 - **Narrow review coverage.** Android reviews need a service account and work only for an app you own.
 

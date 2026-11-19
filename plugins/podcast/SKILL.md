@@ -89,7 +89,7 @@ python3 SKILL_DIR/ledger.py scoreboard [--by-guest]
 
 `query` searches every finding ever recorded (Step 3 stores them, not just
 predictions). `scoreboard` gives confirmed/(confirmed+failed) hit rate per
-show, or per speaker with `--by-guest` once findings carry a `speaker` field.
+show, or per speaker with `--by-guest` for predictions recorded with a `speaker`.
 This path costs a few hundred tokens instead of the full mining pipeline —
 always check whether the question is answerable this way before doing
 anything else.
@@ -380,9 +380,9 @@ no backend is configured; don't fabricate a comparison.
 
 Chat text or a raw markdown dump doesn't hold up as something to reopen or
 share later. This skill owns its report rendering: `template.html` and
-`render_report.py` (both next to this file, symlinked from the
-`signal-report` skill so the two never drift, but invoked directly here —
-no skill-to-skill call at runtime).
+`render_report.py` (both next to this file: generated copies of the
+`signal-report` skill's, kept identical by a repo script, and invoked
+directly here — no skill-to-skill call at runtime).
 
 **Don't hand-write the report HTML.** Build a JSON payload (see
 `render_report.py`'s docstring for the exact schema: title, eyebrow,
@@ -469,8 +469,9 @@ python3 SKILL_DIR/scoreboard_report.py --by-guest --min-tested 2 out.html
 ```
 
 Reuses `render_report.py`/`template.html` (hit-rate bands as tiers instead
-of topic tiers), so it inherits the same filter toolbar, theme rules, and
-em-dash guard for free. It errors out plainly if nothing has been graded
+of topic tiers), so it inherits the same theme rules and em-dash guard for
+free (an em dash inside a recorded show name or prediction is replaced with
+a comma rather than refused). It errors out plainly if nothing has been graded
 yet (`ledger.py check-prediction` never ran) rather than publishing an
 empty "too early to grade" wall — run Step 3.7 against
 `grade-candidates` first if that happens.

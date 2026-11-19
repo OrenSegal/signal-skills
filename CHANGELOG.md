@@ -5,6 +5,16 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+- Fixed: `ideation`'s Step 1 ran `podcast/ledger.py known-issues`, a subcommand that never existed, behind `2>/dev/null`, so it read no podcast findings. It now runs `query` and `predictions --all`. A new test runs every subcommand the skill docs name.
+- Fixed: `podcast/resolve.py` dropped the episode an Apple `?i=` link points at when it was older than the newest `--limit` episodes. It is now appended and marked.
+- Fixed: feed episode dates are emitted and stored as `YYYY-MM-DD`. Before, `ledger.py query --since` let every RSS-dated episode through and sorted by weekday name. Existing state files are normalized when read.
+- Fixed: `review-scout`'s `ledger.py record` had nowhere to store findings, so `known-issues`, `dedup` and `ideation` saw regression notes only. It takes `--findings-json`; `known-issues` entries carry a `kind`.
+- Fixed: `podcast/scoreboard_report.py` exited with a payload error when a show name or prediction contained an em dash.
+- Fixed: `render_report.py` raised a traceback on a non-numeric `rank`, a wrong-typed payload/tier/item, and failed a tier of six or more items that set no `rank`. These are payload errors now, and the footers are scanned for em dashes.
+- Fixed: `review-scout/resolve.py fetch-ios` wrote a count-0 manifest and exited 0 when the first page could not be fetched. `--app-id`, `--country` and `--package` are validated.
+- Fixed: the three ledgers write atomically; recording a podcast episode again keeps predictions that were already graded; a yt-dlp timeout fails one video, not the batch.
+- `scripts/sync-shared-files.sh` also keeps `review-scout/analytics-check.md` identical to `podcast`'s.
+
 - Fixed: `plugins/podcast/resolve.py` checked a host's addresses and then let `http.client` look the host up again to connect, so a DNS answer that changed in between (rebinding) could reach a loopback or internal service and land in `--download`. It now connects only to the addresses it checked. HTTP(S)_PROXY is ignored unless you pass `--use-proxy`, since a proxy connects past that check; the script says so when a proxy is set but unused.
 - Added tests for `ideation`'s `ledger.py` (duplicate proposals, status filter, invalid status). `research-suite` and `signal-outreach`'s skill text remain untested.
 
