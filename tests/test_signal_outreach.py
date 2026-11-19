@@ -73,6 +73,21 @@ class ReportTests(unittest.TestCase):
                 (EXAMPLES / "outreach-report.html").read_text(encoding="utf-8"),
             )
 
+    def test_channel_breakdown_values_are_escaped(self):
+        # The package JSON is model output built from fetched pages. Every other
+        # value went through esc(); the channel counts were written raw.
+        output = go.build_html({"channel_breakdown": {"email": "<img src=x onerror=alert(1)>"}})
+        self.assertNotIn("<img src=x", output)
+        self.assertIn("&lt;img src=x", output)
+
+    def test_touches_of_the_wrong_shape_are_skipped_not_fatal(self):
+        output = go.build_html({"sequences": [
+            {"prospect_name": "A", "touches": ["just a string", {"step": 1, "body": "real touch"}]},
+            {"prospect_name": "B", "touches": "not a list"},
+        ]})
+        self.assertIn("real touch", output)
+        self.assertEqual(output.count('<div class="touch">'), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

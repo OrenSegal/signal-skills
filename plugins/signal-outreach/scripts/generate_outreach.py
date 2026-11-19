@@ -52,7 +52,7 @@ def render_touch(touch: dict[str, Any]) -> str:
 
 
 def render_sequence(seq: dict[str, Any], index: int) -> str:
-    touches = "".join(render_touch(t) for t in items(seq.get("touches")))
+    touches = "".join(render_touch(t) for t in dicts(seq.get("touches")))
     rh = seq.get("response_handling") if isinstance(seq.get("response_handling"), dict) else {}
 
     response_html = ""
@@ -160,7 +160,7 @@ def build_html(data: dict[str, Any]) -> str:
     pitch_html = "".join(render_company_pitch(x, i) for i, x in enumerate(company_pitches, 1))
 
     channel_items = "".join(
-        f"<div><span>{esc(ch)}</span><strong>{count}</strong></div>"
+        f"<div><span>{esc(ch)}</span><strong>{esc(count)}</strong></div>"
         for ch, count in channel_breakdown.items()
     )
 
