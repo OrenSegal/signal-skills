@@ -59,15 +59,22 @@ def slugify(name):
 def load_json(path, default):
     if not path.exists():
         return default
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_json(path, data):
+    """Write to a temp file beside `path`, then rename over it, so a crash or
+    a full disk mid-write cannot leave a truncated ledger behind."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2, sort_keys=True)
-        f.write("\n")
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, sort_keys=True)
+            f.write("\n")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def show_path(slug):

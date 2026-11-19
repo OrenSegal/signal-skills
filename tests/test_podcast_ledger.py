@@ -361,3 +361,13 @@ class EpisodeDates(IsolatedState):
         }})
         self.assertEqual([f["episode"] for f in self.query()], ["new", "old"])
         self.assertEqual([f["date"] for f in self.query(since="2026-01-01")], ["2026-07-10"])
+
+
+class AtomicSave(IsolatedState):
+    def test_a_failed_write_leaves_the_previous_file_intact(self):
+        path = ledger.show_path("show")
+        ledger.save_json(path, {"show": "Show", "episodes": {"ep1": {}}})
+        with self.assertRaises(TypeError):
+            ledger.save_json(path, {"show": "Show", "episodes": {"ep1": {}, "ep2": object()}})
+        self.assertEqual(ledger.load_json(path, None), {"show": "Show", "episodes": {"ep1": {}}})
+        self.assertEqual([p.name for p in path.parent.iterdir()], ["show.json"])

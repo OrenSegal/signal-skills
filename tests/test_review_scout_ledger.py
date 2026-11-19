@@ -120,6 +120,16 @@ class RecordedFindings(IsolatedState):
         self.assertEqual(len(ledger.load_app("my-app")["batches"]["v1"]["findings"]), 3)
 
 
+class AtomicSave(IsolatedState):
+    def test_a_failed_write_leaves_the_previous_file_intact(self):
+        path = ledger.app_path("app")
+        ledger.save_json(path, {"app": "App", "batches": {"v1": {}}})
+        with self.assertRaises(TypeError):
+            ledger.save_json(path, {"app": "App", "batches": {"v1": {}, "v2": object()}})
+        self.assertEqual(ledger.load_json(path, None), {"app": "App", "batches": {"v1": {}}})
+        self.assertEqual([p.name for p in path.parent.iterdir()], ["app.json"])
+
+
 class Dedup(IsolatedState):
     def test_cross_batch_overlap_detected_same_batch_excluded(self):
         self.write_app("app-a", {

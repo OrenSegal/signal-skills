@@ -47,6 +47,14 @@ class IdeationLedger(unittest.TestCase):
                 ledger.cmd_set_status(argparse.Namespace(title=title, status=status))
             self.assertEqual(cm.exception.code, 1)
 
+    def test_a_failed_write_leaves_the_previous_file_intact(self):
+        self.propose("Offline Mode")
+        before = ledger.load_ideas()
+        with self.assertRaises(TypeError):
+            ledger.save_json(ledger.IDEAS_PATH, {"ideas": {"offline-mode": {}, "broken": object()}})
+        self.assertEqual(ledger.load_ideas(), before)
+        self.assertEqual([p.name for p in ledger.IDEAS_PATH.parent.iterdir()], ["ideas.json"])
+
 
 if __name__ == "__main__":
     unittest.main()
