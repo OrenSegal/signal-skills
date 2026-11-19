@@ -14,6 +14,9 @@ follows [Keep a Changelog](https://keepachangelog.com/).
 - Fixed: `review-scout/resolve.py fetch-ios` wrote a count-0 manifest and exited 0 when the first page could not be fetched. `--app-id`, `--country` and `--package` are validated.
 - Fixed: the three ledgers write atomically; recording a podcast episode again keeps predictions that were already graded; a yt-dlp timeout fails one video, not the batch.
 - `scripts/sync-shared-files.sh` also keeps `review-scout/analytics-check.md` identical to `podcast`'s.
+- Fixed: `signal-outreach`'s report wrote `channel_breakdown` counts unescaped, and a touch that was not an object stopped the report.
+- `podcast/resolve.py` parses its arguments with argparse: flags work in any position, a bad `--limit` is a usage error, and `--help` exists.
+- CI runs `ruff check`, `node --check bin/install.js`, and the tests on Python 3.10 and 3.13. Added tests for the installer and for the cutoff and threshold boundaries.
 
 - Fixed: `plugins/podcast/resolve.py` checked a host's addresses and then let `http.client` look the host up again to connect, so a DNS answer that changed in between (rebinding) could reach a loopback or internal service and land in `--download`. It now connects only to the addresses it checked. HTTP(S)_PROXY is ignored unless you pass `--use-proxy`, since a proxy connects past that check; the script says so when a proxy is set but unused.
 - Added tests for `ideation`'s `ledger.py` (duplicate proposals, status filter, invalid status). `research-suite` and `signal-outreach`'s skill text remain untested.
