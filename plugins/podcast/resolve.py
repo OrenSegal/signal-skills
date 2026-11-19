@@ -25,6 +25,7 @@ manual subs if present). No podcast:transcript tag equivalent exists, so
 `have` transcript count reflects whichever videos actually have an en/en-orig
 caption track — some videos (esp. very new ones) may have none yet.
 """
+import argparse
 import datetime
 import email.utils
 import http.client
@@ -434,20 +435,25 @@ def flatten_transcript(url):
 
 
 def main():
-    a = sys.argv[1:]
-    if "--use-proxy" in a:
-        a.remove("--use-proxy")
+    if len(sys.argv) < 2:
+        sys.exit(__doc__)
+    ap = argparse.ArgumentParser(usage='resolve.py "<url-or-show-name>" [--name SHOW] [--limit N] [--download DIR] [--use-proxy]')
+    ap.add_argument("source", nargs="?", help="podcast URL, RSS URL, YouTube URL or show name")
+    ap.add_argument("--name", help="show name to search for (required with a Spotify link)")
+    ap.add_argument("--limit", type=int, default=12, help="newest episodes to list (default 12)")
+    ap.add_argument("--download", metavar="DIR", help="write flattened transcripts and manifest.json here")
+    ap.add_argument("--use-proxy", action="store_true", help="fetch through HTTP(S)_PROXY (weaker address check)")
+    args = ap.parse_args()
+    if args.use_proxy:
         global _OPENER
         _OPENER = _opener(use_proxy=True)
     elif any(urllib.request.getproxies().get(s) for s in ("http", "https")):
         print("note: HTTP(S)_PROXY is set but not used. If fetches fail to resolve hosts, re-run with "
               "--use-proxy (the address check is weaker through a proxy).", file=sys.stderr)
-    if not a:
-        sys.exit(__doc__)
-    name = a[a.index("--name") + 1] if "--name" in a else None
-    src = name if a[0].startswith("--") else a[0]
-    limit = int(a[a.index("--limit") + 1]) if "--limit" in a else 12
-    dl = a[a.index("--download") + 1] if "--download" in a else None
+    name, limit, dl = args.name, args.limit, args.download
+    src = args.source or name
+    if not src:
+        ap.error("give a podcast URL or show name, or --name SHOW")
 
     if is_youtube(src):
         run_youtube(src, limit, dl)

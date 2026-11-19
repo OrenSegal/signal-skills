@@ -408,3 +408,45 @@ class YouTubeTimeout(unittest.TestCase):
             with self.assertRaises(SystemExit) as ctx:
                 resolve.yt_dlp_json("https://www.youtube.com/@handle")
         self.assertIn("timed out", str(ctx.exception))
+
+
+class CommandLine(unittest.TestCase):
+    """Flags are accepted in any position, and a bad value is a usage error."""
+
+    def run_main(self, *argv):
+        seen = {}
+
+        def fake_resolve_source(src, name=None):
+            seen["src"], seen["name"] = src, name
+            return "https://feeds.example.com/f.xml", None, None, "Test Show"
+
+        def fake_parse_feed(xml, limit, target=None):
+            seen["limit"] = limit
+            return []
+
+        with mock.patch.object(resolve, "resolve_source", fake_resolve_source), \
+                mock.patch.object(resolve, "get", lambda url, timeout=60: b""), \
+                mock.patch.object(resolve, "parse_feed", fake_parse_feed), \
+                mock.patch.object(sys, "argv", ["resolve.py", *argv]), \
+                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            resolve.main()
+        return seen
+
+    def test_flags_before_the_source(self):
+        self.assertEqual(self.run_main("--limit", "5", "Some Show"), {"src": "Some Show", "name": None, "limit": 5})
+
+    def test_flags_after_the_source(self):
+        self.assertEqual(self.run_main("Some Show", "--limit", "5")["limit"], 5)
+
+    def test_name_alone_is_the_source(self):
+        self.assertEqual(self.run_main("--name", "Some Show"), {"src": "Some Show", "name": "Some Show", "limit": 12})
+
+    def test_a_non_numeric_limit_is_a_usage_error(self):
+        with self.assertRaises(SystemExit) as ctx:
+            self.run_main("Some Show", "--limit", "abc")
+        self.assertEqual(ctx.exception.code, 2)
+
+    def test_no_arguments_prints_the_usage_text(self):
+        with self.assertRaises(SystemExit) as ctx:
+            self.run_main()
+        self.assertIn("Resolve any podcast URL", str(ctx.exception))
