@@ -18,6 +18,7 @@ Subcommands:
 """
 import argparse
 import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -81,8 +82,27 @@ def cmd_detect(args):
 # covers your own app) — this skill only needs the read path, so the RSS
 # feed is sufficient and requires nothing to set up.
 
+def ios_app_id(value):
+    """The numeric App Store id, also accepted as it appears in a store URL
+    ("id284882215"). It goes into a URL and a file name, so nothing else passes."""
+    m = re.fullmatch(r"(?:id)?(\d+)", (value or "").strip())
+    if not m:
+        sys.exit(f"--app-id must be the numeric App Store id (the digits after 'id' in the app's store URL), got {value!r}")
+    return m.group(1)
+
+
+def android_package(value):
+    """A Play package name (com.example.app). It goes into a file name."""
+    if not re.fullmatch(r"[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*", value or ""):
+        sys.exit(f"--package must be a Play package name such as com.example.app, got {value!r}")
+    return value
+
+
 def fetch_ios(app_id, country, pages, out_dir: Path):
-    out_dir.mkdir(parents=True, exist_ok=True)
+    app_id = ios_app_id(app_id)
+    if not re.fullmatch(r"[A-Za-z]{2}", country or ""):
+        sys.exit(f"--country must be a two-letter storefront code such as us, got {country!r}")
+    country = country.lower()
     all_entries = []
     for page in range(1, pages + 1):
         url = (
@@ -93,6 +113,9 @@ def fetch_ios(app_id, country, pages, out_dir: Path):
             with urllib.request.urlopen(url, timeout=15) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except Exception as e:
+            if page == 1:
+                # Nothing fetched is not the same as "this app has no reviews".
+                sys.exit(f"could not fetch reviews for app id {app_id} ({country}): {e}")
             print(f"page {page}: fetch failed ({e}), stopping", file=sys.stderr)
             break
         entries = data.get("feed", {}).get("entry", [])
@@ -106,6 +129,7 @@ def fetch_ios(app_id, country, pages, out_dir: Path):
         all_entries.extend(entries)
         print(f"page {page}: {len(entries)} reviews", file=sys.stderr)
 
+    out_dir.mkdir(parents=True, exist_ok=True)
     reviews = []
     for e in all_entries:
         reviews.append({
@@ -171,6 +195,7 @@ def cmd_fetch_android(args):
         )
         sys.exit(1)
 
+    args.package = android_package(args.package)
     creds = service_account.Credentials.from_service_account_file(
         args.credentials,
         scopes=["https://www.googleapis.com/auth/androidpublisher"],

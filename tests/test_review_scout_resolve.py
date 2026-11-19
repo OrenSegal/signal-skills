@@ -1,6 +1,8 @@
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -124,6 +126,50 @@ class FetchIos(unittest.TestCase):
         txt = (out_dir / "ios-999.txt").read_text()
         self.assertIn("Great app", txt)
         self.assertIn("Crashes on launch", txt)
+
+    def test_first_page_failure_exits_nonzero_and_writes_nothing(self):
+        # A wrong id, no network or a blocked host used to end in an empty
+        # reviews file, a count-0 manifest and exit 0: "no reviews" and "could
+        # not fetch" looked the same to the caller.
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out_dir = Path(tmp.name) / "tx"
+        with patch.object(resolve.urllib.request, "urlopen", side_effect=OSError("network down")), \
+                redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit) as ctx:
+                resolve.fetch_ios("999", "us", 5, out_dir)
+        self.assertIn("network down", str(ctx.exception))
+        self.assertEqual(list(out_dir.glob("*")) if out_dir.exists() else [], [])
+
+    def test_app_with_no_reviews_still_writes_a_count_zero_manifest(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        empty = type("R", (), {"__enter__": lambda s: s, "__exit__": lambda s, *a: False,
+                               "read": lambda s: json.dumps({"feed": {}}).encode("utf-8")})
+        with patch.object(resolve.urllib.request, "urlopen", side_effect=lambda url, timeout=15: empty()), \
+                redirect_stdout(io.StringIO()):
+            resolve.fetch_ios("999", "us", 5, Path(tmp.name))
+        self.assertEqual(json.loads((Path(tmp.name) / "ios-999-manifest.json").read_text())["count"], 0)
+
+    def test_app_id_and_country_are_validated_before_any_fetch(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        with patch.object(resolve.urllib.request, "urlopen", side_effect=AssertionError("fetched")):
+            for app_id, country in (("../../evil", "us"), ("com.example.app", "us"), ("999", "../x"), ("", "us")):
+                with self.assertRaises(SystemExit, msg=(app_id, country)):
+                    resolve.fetch_ios(app_id, country, 1, Path(tmp.name))
+
+    def test_app_id_copied_from_a_store_url_is_accepted(self):
+        self.assertEqual(resolve.ios_app_id("id284882215"), "284882215")
+        self.assertEqual(resolve.ios_app_id(" 284882215 "), "284882215")
+
+
+class AndroidPackage(unittest.TestCase):
+    def test_package_name_cannot_escape_the_download_folder(self):
+        self.assertEqual(resolve.android_package("com.example.app_2"), "com.example.app_2")
+        for bad in ("../../evil", "com/example", "", "com.example app"):
+            with self.assertRaises(SystemExit, msg=bad):
+                resolve.android_package(bad)
 
 
 if __name__ == "__main__":
