@@ -33,10 +33,15 @@ strengthen the case.
 Read the other skills' state directly, don't re-derive from scratch:
 
 ```bash
-python3 SKILL_DIR/../podcast/ledger.py known-issues 2>/dev/null
+python3 SKILL_DIR/../podcast/ledger.py query 2>/dev/null
+python3 SKILL_DIR/../podcast/ledger.py predictions --all 2>/dev/null
 python3 SKILL_DIR/../review-scout/ledger.py known-issues 2>/dev/null
 python3 SKILL_DIR/../review-scout/ledger.py dedup --threshold 0.5 2>/dev/null
 ```
+
+`query` with no flags prints every finding `podcast` has recorded (add
+`--topic`/`--since` to narrow it); `predictions --all` adds each prediction
+and whether it was confirmed, failed or went stale.
 
 `SKILL_DIR/../podcast` is where a skills-folder install puts the sibling
 skill. A plugin install puts each skill in its own versioned folder, so the

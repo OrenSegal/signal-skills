@@ -8,8 +8,8 @@ single source of truth for this skill's behavior — this file is only a
 pointer to it, not a second copy of the instructions.
 
 Everything `SKILL.md` tells you to run (`ledger.py`, `render_report.py`,
-and reading `podcast`/`review-scout`'s `ledger.py known-issues`/`dedup`
-output) is plain Python invoked via subprocess/Bash — no Claude-specific
+and reading `podcast`'s `query`/`predictions` and `review-scout`'s
+`known-issues`/`dedup` ledger output) is plain Python invoked via subprocess/Bash — no Claude-specific
 API, so it runs unmodified under any tool-use loop that can execute shell
 commands.
 
