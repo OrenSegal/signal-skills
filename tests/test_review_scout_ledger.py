@@ -68,6 +68,58 @@ class RecordAndKnownIssues(IsolatedState):
         self.assertEqual(len(out), 2)
 
 
+class RecordedFindings(IsolatedState):
+    """SKILL.md has each extractor return findings, and ideation reads
+    review-scout through `known-issues`. Until findings were recorded, the
+    ledger kept only regression notes: a bug seen in one version left nothing
+    for a later batch (or for ideation) to compare against."""
+
+    FINDINGS = [
+        {"claim": "checkout button crashes on submit", "tag": "bug", "version": "2.3", "count": 15},
+        {"claim": "wants dark mode", "tag": "feature-request", "version": "2.3", "count": 4},
+        {"claim": "loves the offline sync", "tag": "praise", "version": "2.3", "count": 9},
+    ]
+
+    def record(self, batch, findings, regressions=()):
+        return self.run_cmd(
+            ledger.cmd_record, app="My App", batch=batch, source="ios-app-store", date_range="", findings_path="",
+            findings_json=json.dumps(findings), regressions_json=json.dumps(list(regressions)))
+
+    def test_record_stores_findings(self):
+        out = self.record("v2.3", self.FINDINGS)
+        self.assertIn("3 findings", out)
+        self.assertEqual(ledger.load_app("my-app")["batches"]["v2.3"]["findings"], self.FINDINGS)
+
+    def test_known_issues_lists_findings_and_regressions(self):
+        self.record("v2.3", self.FINDINGS, regressions=["login loop, fixed v2.1, back in v2.3"])
+        out = json.loads(self.run_cmd(ledger.cmd_known_issues, app="My App"))
+        self.assertEqual([i["kind"] for i in out], ["finding", "finding", "finding", "regression"])
+        bug = out[0]
+        self.assertEqual((bug["note"], bug["tag"], bug["version"], bug["count"], bug["batch"]),
+                         ("checkout button crashes on submit", "bug", "2.3", 15, "v2.3"))
+
+    def test_dedup_finds_a_bug_that_returns_in_a_later_batch(self):
+        self.record("v2.3", self.FINDINGS)
+        self.record("v2.6", [{"claim": "checkout button crashes when submitting", "tag": "bug", "version": "2.6"},
+                             {"claim": "loves the offline sync feature", "tag": "praise", "version": "2.6"}])
+        out = json.loads(self.run_cmd(ledger.cmd_dedup, threshold=0.5))
+        self.assertEqual([(p["a"]["batch"], p["b"]["batch"]) for p in out], [("v2.3", "v2.6")])
+        self.assertIn("checkout", out[0]["shared_terms"])
+
+    def test_plain_string_findings_are_accepted(self):
+        self.record("v1", ["app freezes on launch"])
+        out = json.loads(self.run_cmd(ledger.cmd_known_issues, app="My App"))
+        self.assertEqual(out[0]["note"], "app freezes on launch")
+
+    def test_main_accepts_findings_json(self):
+        with mock.patch.object(ledger, "migrate_legacy", lambda: None), \
+                mock.patch("sys.argv", ["ledger.py", "record", "--app", "My App", "--batch", "v1",
+                                        "--findings-json", json.dumps(self.FINDINGS)]), \
+                redirect_stdout(io.StringIO()):
+            ledger.main()
+        self.assertEqual(len(ledger.load_app("my-app")["batches"]["v1"]["findings"]), 3)
+
+
 class Dedup(IsolatedState):
     def test_cross_batch_overlap_detected_same_batch_excluded(self):
         self.write_app("app-a", {

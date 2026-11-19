@@ -109,11 +109,15 @@ Rules for every extractor:
 }
 ```
 
-After each extractor returns, record it:
+After each extractor returns, record it. Pass the findings themselves
+(`--findings-json`), not just the file path: the path is a scratch file,
+and the recorded findings are what Step 3.5 compares a later batch against
+and what `ideation` reads.
 
 ```bash
 python3 SKILL_DIR/ledger.py record --app "<app>" --batch "<batch>" \
   --source ios-app-store --date-range "<range>" --findings-path "<path>" \
+  --findings-json '[{"claim": "...", "tag": "bug", "version": "2.6", "count": 15}]' \
   --regressions-json '["<regression note>", "..."]'
 ```
 
@@ -124,9 +128,11 @@ python3 SKILL_DIR/ledger.py known-issues --app "<app name>"
 python3 SKILL_DIR/ledger.py dedup --threshold 0.5
 ```
 
-A complaint that token-overlaps with an older regression note, in a LATER
-version, is the single most valuable output of this skill: something that
-was supposedly fixed came back. Surface it explicitly, don't bury it in
+`known-issues` lists every recorded finding and regression note; `dedup`
+pairs bug findings and regression notes whose wording overlaps across
+batches. A complaint that token-overlaps with an older bug or regression
+note, in a LATER version, is the single most valuable output of this
+skill: something that was supposedly fixed came back. Surface it explicitly, don't bury it in
 the general bug list.
 
 ## Step 4 — Synthesize across batches/versions

@@ -126,37 +126,49 @@ def cmd_record(args):
     flagged (a complaint that matches one already marked fixed in an
     earlier version).
 
+    findings_json: JSON array of {"claim": "...", "tag": "bug|feature-request|
+      praise", "version": "...", "count": N} (a plain string is taken as the
+      claim). Stored in the ledger itself, because findings_path points at a
+      scratch file that is gone by the next run: this is what a later batch
+      and the `ideation` skill compare against.
     regressions_json: JSON array of strings (each a short regression note,
     e.g. "crash on checkout, first seen v2.3, marked fixed v2.4, recurring v2.6").
     """
     slug = slugify(args.app)
     app = load_app(slug)
     regressions = json.loads(args.regressions_json) if args.regressions_json else []
+    raw_findings = json.loads(getattr(args, "findings_json", "") or "[]")
+    findings = [{"claim": f} if isinstance(f, str) else f for f in raw_findings]
     app["batches"][args.batch] = {
         "source": args.source or "",
         "date_range": args.date_range or "",
         "mined_at": today(),
         "findings_path": args.findings_path or "",
+        "findings": findings,
         "regressions": regressions,
     }
     app["app"] = args.app
     save_json(app_path(slug), app)
-    print(f"recorded {slug}/{args.batch} ({len(regressions)} regressions)")
+    print(f"recorded {slug}/{args.batch} ({len(findings)} findings, {len(regressions)} regressions)")
 
 
 # ------------------------------------------------------------ known issues
 
 def cmd_known_issues(args):
-    """Dump every complaint/topic recorded across all mined batches for an
-    app (or all apps if --app omitted), so a fresh mining pass can check
-    whether something already-flagged-fixed has come back."""
+    """Dump every finding and regression note recorded across all mined
+    batches for an app (or all apps if --app omitted), so a fresh mining pass
+    can check whether something seen in an earlier version has come back.
+    Each entry has `kind` ("finding" or "regression") and `note` (the text)."""
     apps = [slugify(args.app)] if args.app else [p.stem for p in _state_files()]
     out = []
     for slug in apps:
         app = load_app(slug)
         for batch, data in app["batches"].items():
+            for f in data.get("findings", []):
+                out.append({**{k: v for k, v in f.items() if k != "claim"},
+                            "app": app["app"], "batch": batch, "kind": "finding", "note": f.get("claim", "")})
             for r in data.get("regressions", []):
-                out.append({"app": app["app"], "batch": batch, "note": r})
+                out.append({"app": app["app"], "batch": batch, "kind": "regression", "note": r})
     print(json.dumps(out, indent=2))
 
 
@@ -173,15 +185,17 @@ def _keywords(text):
 
 
 def cmd_dedup(args):
-    """Mechanical overlap scan across every mined app's recorded
-    regressions: surfaces candidate repeats (same complaint, different
-    version) to check by hand, not a verdict. Token-overlap only, no
-    embeddings/ML dependency."""
+    """Mechanical overlap scan across every mined app's recorded bug
+    findings and regression notes: surfaces candidate repeats (same
+    complaint, different version) to check by hand, not a verdict. Feature
+    requests and praise are left out; a repeat of those is not a regression.
+    Token-overlap only, no embeddings/ML dependency."""
     claims = []  # (app, batch, text, keyword-set)
     for state_file in _state_files():
         app = load_json(state_file, {"app": state_file.stem, "batches": {}})
         for batch, data in app["batches"].items():
-            for r in data.get("regressions", []):
+            complaints = [f.get("claim", "") for f in data.get("findings", []) if f.get("tag", "bug") == "bug"]
+            for r in complaints + list(data.get("regressions", [])):
                 claims.append((app["app"], batch, r, _keywords(r)))
 
     threshold = args.threshold
@@ -231,6 +245,7 @@ def main():
     s.add_argument("--source", default="")
     s.add_argument("--date-range", default="")
     s.add_argument("--findings-path", default="")
+    s.add_argument("--findings-json", default="[]")
     s.add_argument("--regressions-json", default="[]")
     s.set_defaults(func=cmd_record)
 
