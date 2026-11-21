@@ -301,5 +301,42 @@ class FetchGuard(unittest.TestCase):
             resolve.check_url("https://fed1.ca/feed.xml")
 
 
+class YtDlpBoundary(unittest.TestCase):
+    def test_listing_timeout_exits_with_a_message(self):
+        import subprocess
+        def boom(cmd, **kw):
+            raise subprocess.TimeoutExpired(cmd, kw.get("timeout"))
+        with mock.patch.object(resolve.subprocess, "run", boom), \
+                self.assertRaises(SystemExit) as cm:
+            resolve.yt_dlp_json("https://youtu.be/abc")
+        self.assertIn("timed out", str(cm.exception))
+
+    def test_listing_non_json_output_exits_with_a_message(self):
+        done = mock.Mock(stdout=b"not json")
+        with mock.patch.object(resolve.subprocess, "run", return_value=done), \
+                self.assertRaises(SystemExit) as cm:
+            resolve.yt_dlp_json("https://youtu.be/abc")
+        self.assertIn("yt-dlp", str(cm.exception))
+
+    def test_transcript_timeout_means_no_captions_for_that_video(self):
+        import subprocess
+        def boom(cmd, **kw):
+            raise subprocess.TimeoutExpired(cmd, kw.get("timeout"))
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(resolve.subprocess, "run", boom):
+            self.assertIsNone(resolve.yt_transcript("abc", d))
+
+
+class FeedFetchFailure(unittest.TestCase):
+    def test_unreachable_feed_exits_with_a_message(self):
+        def down(url, timeout=60):
+            raise urllib.error.URLError("no route")
+        argv = ["resolve.py", "https://feeds.example.com/x.xml"]
+        with mock.patch.object(resolve, "get", down), mock.patch.object(sys, "argv", argv), \
+                self.assertRaises(SystemExit) as cm:
+            resolve.main()
+        self.assertIn("no route", str(cm.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
