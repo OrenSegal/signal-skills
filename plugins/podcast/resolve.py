@@ -215,7 +215,12 @@ def yt_dlp_json(url, extra=()):
         sys.exit("yt-dlp not found on PATH. Install with `brew install yt-dlp`.")
     except subprocess.CalledProcessError as ex:
         sys.exit(f"yt-dlp failed for {url}: {ex.stderr.decode('utf-8', 'replace')[:400]}")
-    return json.loads(raw)
+    except subprocess.TimeoutExpired:
+        sys.exit(f"yt-dlp timed out after 60s for {url}. Check the connection and try again.")
+    try:
+        return json.loads(raw)
+    except ValueError:
+        sys.exit(f"yt-dlp returned output that is not JSON for {url}.")
 
 
 def yt_list_videos(src, limit):
@@ -251,7 +256,10 @@ def yt_transcript(video_id, workdir):
         cmd = ["yt-dlp", "--skip-download", "--no-warnings", sub_flag,
                "--sub-lang", "en.*", "--sub-format", "vtt",
                "-o", base + ".%(ext)s", url]
-        subprocess.run(cmd, capture_output=True, timeout=120)
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=120)
+        except subprocess.TimeoutExpired:
+            return None  # reported by the caller as "no captions" for this video
         for fname in os.listdir(workdir):
             if fname.startswith(os.path.basename(base)) and fname.endswith(".vtt"):
                 path = os.path.join(workdir, fname)
@@ -419,6 +427,8 @@ def main():
         eps = parse_feed(get(feed), limit)
     except BlockedURL as ex:
         sys.exit(f"Refused to fetch the feed: {ex}")
+    except OSError as ex:  # URLError, HTTPError, timeouts, connection resets
+        sys.exit(f"Could not fetch the feed {feed}: {ex}")
     except NotAFeed as ex:
         sys.exit(f"{feed} is not an RSS podcast feed ({ex}). Pass the show's RSS URL, its Apple Podcasts URL, or its name.")
     have = sum(1 for e in eps if e["transcript"])
