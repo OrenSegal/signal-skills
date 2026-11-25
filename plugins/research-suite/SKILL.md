@@ -5,6 +5,7 @@ disable-model-invocation: true
 metadata:
   openclaw:
     homepage: https://github.com/OrenSegal/signal-skills
+model: haiku
 ---
 
 Four skills, one shared rendering/analytics spine, each with its own

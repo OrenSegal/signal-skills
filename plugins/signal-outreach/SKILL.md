@@ -6,6 +6,7 @@ metadata:
     homepage: https://github.com/OrenSegal/signal-skills
     requires:
       bins: [python3]
+model: sonnet
 ---
 
 # Signal Outreach

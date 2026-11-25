@@ -31,6 +31,8 @@ Both tools read the same folder shape (`SKILL.md` plus scripts), just from diffe
 
 **Naming:** `signal-report` was called `signal-scout` before plugin version 2.0.0. It is distinct from the separate [signal-scout](https://github.com/OrenSegal/signal-scout) prospect-finding product (same author, different tool). If you installed the old name, remove `~/.claude/skills/signal-scout` (or `/plugin uninstall signal-scout@oren-signal-skills`) unless that folder holds the signal-scout product.
 
+**Models.** `research-suite` pins Haiku (it routes). `review-scout`, `signal-report` and `signal-outreach` pin Sonnet (defined tasks). `podcast` runs its extractors on Haiku inside the skill. `ideation` answers "what should we build next", an open strategy question: run it on Fable (`/model fable`) when you can.
+
 ## Beyond a one-shot summary
 
 Each mining run writes to a per-show or per-app ledger (`ledger.py`), so results build up across runs instead of resetting. Ledgers and preferences are kept in `~/.signal-skills/<skill>/` (set `SIGNAL_SKILLS_HOME` to move them), outside the install folder, so a plugin update or a second host does not start from empty. Earlier versions kept them next to the scripts; the first run copies them over.
